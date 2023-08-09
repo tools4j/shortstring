@@ -1,0 +1,225 @@
+import java.time.Year
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'idea'
+    id 'java-library'
+    id 'io.freefair.javadoc-links' version '6.5.1' apply false
+    id 'biz.aQute.bnd.builder' version '6.3.1' apply false
+    id 'com.github.hierynomus.license' version "0.16.1" apply false
+}
+
+defaultTasks 'clean', 'build'
+
+def projGroup = 'org.tools4j'
+def projVersion = file('version.txt').text.trim()
+
+def junitVersion = '5.9.2'
+def mockitoVersion = '4.11.0'   //5.x requires Java 11
+
+ext {
+    //gradle clean build publish -PossrhUsername=mterzer -PossrhPassword=xxx
+
+    isReleaseVersion = !projVersion.endsWith('-SNAPSHOT')
+    releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+    snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+
+    println name + " version=" + projVersion + " release=" + isReleaseVersion
+
+    if (!project.hasProperty('ossrhUsername')) {
+        ossrhUsername = ''
+    }
+
+    if (!project.hasProperty('ossrhPassword')) {
+        ossrhPassword = ''
+    }
+}
+
+def projectPom = {
+    name = 'shortstring'
+    packaging = 'pom'
+    // optionally artifactId can be defined here
+    description = 'Tiny library to convert short enough strings to integers and back'
+    url = 'https://github.com/tools4j/shortstring'
+
+    scm {
+        connection = 'scm:git:https://github.com/tools4j/shortstring.git'
+        developerConnection = 'scm:git:https://github.com/tools4j/shortstring.git'
+        url = 'https://github.com/tools4j/shortstring.git'
+    }
+
+    licenses {
+        license {
+            name = 'The MIT License (MIT)'
+            url = 'https://opensource.org/licenses/MIT'
+        }
+    }
+
+    developers {
+        developer {
+            id = 'terzerm'
+            name = 'Marco Terzer'
+            email = 'terzerm@gmail.com'
+            url = 'https://github.com/terzerm'
+        }
+        developer {
+            id = 'anton-anufriev'
+            name = 'Antun Anufriev'
+            email = 'anufriev@gmail.com'
+            url = 'https://github.com/anton-anufriev'
+        }
+    }
+}
+
+jar.enabled = false
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+apply plugin: 'java-library'
+apply plugin: 'com.github.hierynomus.license'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: 'biz.aQute.bnd.builder'
+apply plugin: 'io.freefair.javadoc-links'
+
+dependencies {
+    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
+    testImplementation "org.mockito:mockito-inline:${mockitoVersion}"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${junitVersion}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+}
+
+group = projGroup
+version = projVersion
+
+tasks.withType(Sign) {
+    onlyIf {
+        isReleaseVersion && gradle.taskGraph.hasTask(tasks.publish)
+    }
+}
+
+tasks.withType(Jar) {
+    enabled = true
+    includeEmptyDirs = false
+}
+
+tasks.withType(JavaCompile) {
+    if (JavaVersion.current().isJava9Compatible()) {
+        options.compilerArgs.addAll(['--add-exports', 'java.base/java.lang.reflect=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'java.base/java.net=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'java.base/sun.nio.ch=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'java.base/jdk.internal.ref=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'jdk.unsupported/sun.misc=ALL-UNNAMED'])
+    }
+    options.encoding = 'UTF-8'
+    options.deprecation = true
+}
+
+tasks.withType(Test) {
+
+    enableAssertions = true
+
+    useJUnitPlatform {
+        excludeTags 'perf'
+    }
+
+    testLogging {
+        showStandardStreams = true
+        exceptionFormat = 'full'
+    }
+
+    reports.html.required = false // Disable individual test reports
+}
+
+license {
+    header rootProject.file('etc/LICENSE.template')
+    strictCheck true
+    include "**/*.java"
+    ext.year = Year.now().value
+    mapping {
+        java='SLASHSTAR_STYLE'
+    }
+}
+
+compileJava.dependsOn licenseFormat
+
+javadoc {
+    title = '<h1>Short-string codecs library</h1>'
+    options.bottom = "<i>Copyright &#169; 2023 tools4j.org (Marco Terzer). All Rights Reserved.</i>"
+    options.encoding = 'UTF-8'
+    options.docEncoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    if (JavaVersion.current().isJava10Compatible()) {
+       options.addBooleanOption 'html5', true
+    }
+}
+
+task testJar(type: Jar, dependsOn: testClasses) {
+    archiveClassifier.set "test-${project.archivesBaseName}"
+    from sourceSets.test.output
+}
+
+configurations {
+    tests
+}
+
+artifacts {
+    tests testJar
+}
+
+jar {
+    bnd """
+        Automatic-Module-Name:  org.tools4j.shortstring
+        Bundle-Name:            org.tools4j.shortstring
+        Bundle-SymbolicName:    org.tools4j.shortstring
+        Implementation-Title:   Shortstring
+        Implementation-Vendor:  tools4j.org
+        Implementation-Version: ${projVersion}
+        -exportcontents: org.tools4j.shortstring
+        # Suppress headers that reduce reproducibility.
+        -reproducible: true
+        -noextraheaders: true
+    """
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+publishing {
+    publications {
+        elaraCore(MavenPublication) {
+            from components.java
+            pom(projectPom)
+        }
+    }
+
+    repositories {
+        maven {
+            url = !isReleaseVersion ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = ossrhUsername
+                password = ossrhPassword
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.elaraCore
+}
+
+tasks.register('testReport', TestReport) {
+    destinationDirectory = file("${buildDir}/reports/allTests")
+    // Include the results from the `test` task in all sub-projects
+    testResults.setFrom(subprojects*.test)
+}
