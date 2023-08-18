@@ -59,4 +59,73 @@ enum Chars {
         //equal
         return true;
     }
+
+    static boolean isDigit(final char ch) {
+        return '0' <= ch && ch <= '9';
+    }
+
+    static boolean isLetter(final char ch) {
+        return 'A' <= ch && ch <= 'Z';
+    }
+
+    static boolean isAlphanumeric(final char ch) {
+        return isDigit(ch) || isLetter(ch);
+    }
+
+    static boolean isAlphanumeric(final CharSequence seq) {
+        return isAlphanumeric(seq, 0, seq.length());
+    }
+
+    static boolean isAlphanumeric(final CharSequence seq, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            if (!isAlphanumeric(seq.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static int indexOfFirstLetter(final CharSequence seq, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            if (isLetter(seq.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    static boolean isNumeric(final CharSequence seq) {
+        final int len = seq.length();
+        if (len == 0) {
+            return false;
+        }
+        int i = 0;
+        char first = seq.charAt(i++);
+        if (first == '-') {
+            if (len == 1) {
+                return false;
+            }
+            seq.charAt(i++);
+        }
+        if (!isDigit(first)) {
+            return false;
+        }
+        if (first == '0') {
+            return len == 1;
+        }
+        while (i < len) {
+            if (!isDigit(seq.charAt(i++))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static boolean isSignChar(final char ch) {
+        return ch == '.' || ch == '-';
+    }
+
+    static boolean startsWithSignChar(final CharSequence seq) {
+        return seq.length() > 0 && isSignChar(seq.charAt(0));
+    }
 }

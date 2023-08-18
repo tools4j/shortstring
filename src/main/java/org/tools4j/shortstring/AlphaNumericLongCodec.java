@@ -23,8 +23,11 @@
  */
 package org.tools4j.shortstring;
 
+import static org.tools4j.shortstring.Chars.isAlphanumeric;
+import static org.tools4j.shortstring.Chars.isDigit;
 import static org.tools4j.shortstring.Chars.leq;
 import static org.tools4j.shortstring.Chars.setChar;
+import static org.tools4j.shortstring.Chars.startsWithSignChar;
 import static org.tools4j.shortstring.StringLengths.stringLength;
 
 /**
@@ -113,43 +116,44 @@ public enum AlphaNumericLongCodec {
     public static final String MIN_ALPHANUMERIC = ".ZZZZZZZZZxxxx";
 
     public static long toLong(final CharSequence value) {
-        final CharSeq seq = CharSeq.sequenceFor(value);
-        final int len = value.length();
-        final int off = seq.isSigned() ? 1 : 0;
-        long code;
-        if (seq.isNumeric()) {
-            code = fromDigit(value.charAt(off), value);
-            for (int i = off + 1; i < len; i++) {
-                code *= 10;
-                code += fromDigit(value.charAt(i), value);
-            }
-            return off == 0 ? code : -code;
-        }
-        if (seq.isAlphanumeric() && (len == 12 && off == 0 || len == 13 && off != 0)) {
-            code = fromAlphanumeric0(value.charAt(off), value);
-            for (int i = off + 1; i < len; i++) {
-                code *= 36;
-                code += 35 + fromAlphanumeric(value.charAt(i), value);
-            }
-            code += NUMERIC_BLOCK_LENGTH;
-        } else if (seq.isAlphanumeric() && (len == 13 && off == 0 || len == 14 && off != 0)
-                && CharSeq.sequenceFor(value, len - 2).isAlphaOnly()
-        ) {
-            code = fromAlpha(value.charAt(off), value);
-            for (int i = off + 1; i < len - 2; i++) {
-                code *= 26;
-                code += fromAlpha(value.charAt(i), value);
-            }
-            code += fromAlphanumeric(value.charAt(off + len - 2), value);
-            code *= 36;
-            code += fromAlphanumeric(value.charAt(off + len - 1), value);
-            code *= 36;
-            code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_12_BLOCK_LENGTH;
-        } else {
-            throw new IllegalArgumentException(len == 0 ? "Empty value string" : "Invalid value string: " + value);
-        }
-        assert code >= 0 || code == Long.MIN_VALUE;
-        return off == 0 ? code : -code;
+//        final CharSeq seq = CharSeq.sequenceFor(value);
+//        final int len = value.length();
+//        final int off = seq.isSigned() ? 1 : 0;
+//        long code;
+//        if (seq.isNumeric()) {
+//            code = fromDigit(value.charAt(off), value);
+//            for (int i = off + 1; i < len; i++) {
+//                code *= 10;
+//                code += fromDigit(value.charAt(i), value);
+//            }
+//            return off == 0 ? code : -code;
+//        }
+//        if (seq.isAlphanumeric() && (len == 12 && off == 0 || len == 13 && off != 0)) {
+//            code = fromAlphanumeric0(value.charAt(off), value);
+//            for (int i = off + 1; i < len; i++) {
+//                code *= 36;
+//                code += 35 + fromAlphanumeric(value.charAt(i), value);
+//            }
+//            code += NUMERIC_BLOCK_LENGTH;
+//        } else if (seq.isAlphanumeric() && (len == 13 && off == 0 || len == 14 && off != 0)
+//                && CharSeq.sequenceFor(value, len - 2).isAlphaOnly()
+//        ) {
+//            code = fromAlpha(value.charAt(off), value);
+//            for (int i = off + 1; i < len - 2; i++) {
+//                code *= 26;
+//                code += fromAlpha(value.charAt(i), value);
+//            }
+//            code += fromAlphanumeric(value.charAt(off + len - 2), value);
+//            code *= 36;
+//            code += fromAlphanumeric(value.charAt(off + len - 1), value);
+//            code *= 36;
+//            code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_12_BLOCK_LENGTH;
+//        } else {
+//            throw new IllegalArgumentException(len == 0 ? "Empty value string" : "Invalid value string: " + value);
+//        }
+//        assert code >= 0 || code == Long.MIN_VALUE;
+//        return off == 0 ? code : -code;
+        return 0;
     }
 
     public static StringBuilder toString(final long value, final StringBuilder dst) {
@@ -215,32 +219,28 @@ public enum AlphaNumericLongCodec {
         if (len < 1 || len > MAX_LENGTH_SIGNED) {
             return false;
         }
-        final CharSeq seq = CharSeq.sequenceFor(value);
-        switch (seq) {
-            case NUMERIC_UNSIGNED:
-            case ALPHA_ONLY_UNSIGNED:
-            case DIGIT_PREFIXED_ALPHANUMERIC_UNSIGNED:
-                return len <= MAX_LENGTH_UNSIGNED;
-            case NUMERIC_SIGNED:
-            case ALPHA_ONLY_SIGNED:
-            case DIGIT_PREFIXED_ALPHANUMERIC_SIGNED:
-                return true;
-            case ALPHA_PREFIXED_ALPHANUMERIC_UNSIGNED:
-                return len < MAX_LENGTH_UNSIGNED || (len == MAX_LENGTH_UNSIGNED &&
-                                CharSeq.sequenceFor(value, len - 2).isAlphaOnly() &&
-                                leq(value, MAX_ALPHANUMERIC));
-            case ALPHA_PREFIXED_ALPHANUMERIC_SIGNED:
-                return len < MAX_LENGTH_SIGNED || (/*len == MAX_LENGTH_SIGNED &&*/
-                        CharSeq.sequenceFor(value, len - 2).isAlphaOnly() &&
-                                leq(value, MIN_ALPHANUMERIC));
-            default:
-                return false;
+        final boolean signed = startsWithSignChar(value);
+        if (signed) {
+            if (len < 2) return false;
+            if (len < MAX_LENGTH_SIGNED) return isAlphanumeric(value, 1, len);
+        } else {
+            if (len < MAX_LENGTH_UNSIGNED) return isAlphanumeric(value, 0, len);
         }
+        final int off = signed ? 1 : 0;
+        if (!isAlphanumeric(value, off, len)) {
+            return false;
+        }
+        if (!isDigit(value.charAt(off))) {
+            return true;
+        }
+        return signed ?
+                leq(value, MIN_ALPHANUMERIC) :
+                leq(value, MAX_ALPHANUMERIC);
     }
 
     private static char toAlphanumeric0(final long value) {
         final long code = value % 35;
-        return (char)(code + (code < 9 ? '0' : 'A' - 9));
+        return (char)(code + (code < 9 ? '1' : 'A' - 9));
     }
 
     private static char toAlphanumeric(final long value) {

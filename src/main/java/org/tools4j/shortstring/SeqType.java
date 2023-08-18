@@ -23,21 +23,18 @@
  */
 package org.tools4j.shortstring;
 
-enum CharSeq {
+enum SeqType {
     NUMERIC_UNSIGNED,
     NUMERIC_SIGNED,
-    ALPHA_ONLY_UNSIGNED,
-    ALPHA_ONLY_SIGNED,
-    ALPHA_PREFIXED_ALPHANUMERIC_UNSIGNED,
-    ALPHA_PREFIXED_ALPHANUMERIC_SIGNED,
+    LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED,
+    LETTER_PREFIXED_ALPHANUMERIC_SIGNED,
     DIGIT_PREFIXED_ALPHANUMERIC_UNSIGNED,
     DIGIT_PREFIXED_ALPHANUMERIC_SIGNED,
     INVALID;
 
     public boolean isSigned() {
         return this == NUMERIC_SIGNED ||
-                this == ALPHA_ONLY_SIGNED ||
-                this == ALPHA_PREFIXED_ALPHANUMERIC_SIGNED ||
+                this == LETTER_PREFIXED_ALPHANUMERIC_SIGNED ||
                 this == DIGIT_PREFIXED_ALPHANUMERIC_SIGNED;
     }
 
@@ -45,12 +42,8 @@ enum CharSeq {
         return this == NUMERIC_UNSIGNED || this == NUMERIC_SIGNED;
     }
 
-    public boolean isAlphaOnly() {
-        return this == ALPHA_ONLY_UNSIGNED || this == ALPHA_ONLY_SIGNED;
-    }
-    public boolean isAlphaPrefixAlphanumeric() {
-        return isAlphaOnly() ||
-                this == ALPHA_PREFIXED_ALPHANUMERIC_UNSIGNED || this == ALPHA_PREFIXED_ALPHANUMERIC_SIGNED;
+    public boolean isLetterPrefixAlphanumeric() {
+        return this == LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED || this == LETTER_PREFIXED_ALPHANUMERIC_SIGNED;
     }
 
     public boolean isDigitPrefixAlphanumeric() {
@@ -58,28 +51,32 @@ enum CharSeq {
     }
 
     public boolean isAlphanumeric() {
-        return isAlphaPrefixAlphanumeric() || isDigitPrefixAlphanumeric();
+        return isLetterPrefixAlphanumeric() || isDigitPrefixAlphanumeric();
     }
-    static CharSeq sequenceFor(final CharSequence seq) {
+    static SeqType sequenceFor(final CharSequence seq) {
         return sequenceFor(seq, seq.length());
     }
 
-    static CharSeq sequenceFor(final CharSequence seq, final int length) {
+    static SeqType sequenceFor(final CharSequence seq, final int length) {
         if (length == 0) {
-            return CharSeq.INVALID;
+            return INVALID;
         }
         final CharType charType = CharType.forChar(seq.charAt(0));
         if (length == 1) {
             return forSingleChar(charType);
         }
-        CharSeq type = forMultiChar(charType, seq.charAt(1));
+        SeqType type = forMultiChar(charType, seq.charAt(1));
         for (int i = 2; i < length; i++) {
             type = type.thenChar(seq.charAt(i));
+        }
+        if (length == 2 && type == DIGIT_PREFIXED_ALPHANUMERIC_SIGNED) {
+            //".0' to ".9" are all invalid, but ".0' is valid
+            return INVALID;
         }
         return type;
     }
 
-    private CharSeq thenChar(final char ch) {
+    private SeqType thenChar(final char ch) {
         switch (this) {
             case NUMERIC_UNSIGNED://fallthrough
                 if ('0' <= ch && ch <= '9') {
@@ -97,24 +94,8 @@ enum CharSeq {
                     return DIGIT_PREFIXED_ALPHANUMERIC_SIGNED;
                 }
                 return INVALID;
-            case ALPHA_ONLY_UNSIGNED:
-                if ('A' <= ch && ch <= 'Z') {
-                    return this;
-                }
-                if ('0' <= ch && ch <= '9') {
-                    return ALPHA_PREFIXED_ALPHANUMERIC_UNSIGNED;
-                }
-                return INVALID;
-            case ALPHA_ONLY_SIGNED:
-                if ('A' <= ch && ch <= 'Z') {
-                    return this;
-                }
-                if ('0' <= ch && ch <= '9') {
-                    return ALPHA_PREFIXED_ALPHANUMERIC_SIGNED;
-                }
-                return INVALID;
-            case ALPHA_PREFIXED_ALPHANUMERIC_UNSIGNED:  //fallthrough
-            case ALPHA_PREFIXED_ALPHANUMERIC_SIGNED:    //fallthrough
+            case LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED:  //fallthrough
+            case LETTER_PREFIXED_ALPHANUMERIC_SIGNED:    //fallthrough
             case DIGIT_PREFIXED_ALPHANUMERIC_UNSIGNED:  //fallthrough
             case DIGIT_PREFIXED_ALPHANUMERIC_SIGNED:
                 if (('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9')) {
@@ -127,52 +108,60 @@ enum CharSeq {
     }
 
 
-    private static CharSeq forSingleChar(final CharType charType) {
+    private static SeqType forSingleChar(final CharType charType) {
         switch (charType) {
             case ALPHA:
-                return CharSeq.ALPHA_ONLY_UNSIGNED;
+                return LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED;
             case ZERO_DIGIT://fallthrough
             case NON_ZERO_DIGIT:
-                return CharSeq.NUMERIC_UNSIGNED;
+                return NUMERIC_UNSIGNED;
             default:
-                return CharSeq.INVALID;
+                return INVALID;
         }
     }
 
-    private static CharSeq forMultiChar(final CharType first, final char then) {
+    private static SeqType forMultiChar(final CharType first, final char then) {
         switch (first) {
             case ALPHA:
                 if ('A' <= then && then <= 'Z') {
-                    return CharSeq.ALPHA_ONLY_UNSIGNED;
+                    return LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED;
                 }
                 if ('0' <= then && then <= '9') {
-                    return CharSeq.ALPHA_PREFIXED_ALPHANUMERIC_UNSIGNED;
+                    return LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED;
                 }
-                return CharSeq.INVALID;
+                return INVALID;
+            case ZERO_DIGIT:
+                if ('0' <= then && then <= '9') {
+                    //zero prefixed value is treated as alphanumeric
+                    return DIGIT_PREFIXED_ALPHANUMERIC_UNSIGNED;
+                }
+                if ('A' <= then && then <= 'Z') {
+                    return DIGIT_PREFIXED_ALPHANUMERIC_UNSIGNED;
+                }
+                return INVALID;
             case NON_ZERO_DIGIT:
                 if ('0' <= then && then <= '9') {
-                    return CharSeq.NUMERIC_UNSIGNED;
+                    return NUMERIC_UNSIGNED;
                 }
                 if ('A' <= then && then <= 'Z') {
-                    return CharSeq.DIGIT_PREFIXED_ALPHANUMERIC_UNSIGNED;
+                    return DIGIT_PREFIXED_ALPHANUMERIC_UNSIGNED;
                 }
-                return CharSeq.INVALID;
+                return INVALID;
             case ALPHANUMERIC_SIGN:
                 if ('A' <= then && then <= 'Z') {
-                    return CharSeq.ALPHA_ONLY_SIGNED;
+                    return LETTER_PREFIXED_ALPHANUMERIC_SIGNED;
                 }
-                if ('1' <= then && then <= '9') {
-                    return CharSeq.DIGIT_PREFIXED_ALPHANUMERIC_SIGNED;
+                if ('0' <= then && then <= '9') {
+                    return DIGIT_PREFIXED_ALPHANUMERIC_SIGNED;
                 }
-                return CharSeq.INVALID;
+                return INVALID;
             case NUMERIC_SIGN:
                 if ('1' <= then && then <= '9') {
-                    return CharSeq.NUMERIC_SIGNED;
+                    return NUMERIC_SIGNED;
                 }
-                return CharSeq.INVALID;
-            case ZERO_DIGIT://fallthrough
+                return INVALID;
             default:
-                return CharSeq.INVALID;
+                return INVALID;
         }
     }
 }

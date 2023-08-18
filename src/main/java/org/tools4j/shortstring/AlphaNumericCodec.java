@@ -24,24 +24,46 @@
 package org.tools4j.shortstring;
 
 /**
- * Alphanumeric codec translating between string and integral representation of a command value.  This codec supports
- * alphanumeric strings of length 6 (or signed 7).
+ * Codec translating short alphanumeric strings to integers and back. For conversion to int (long), strings up to length
+ * 6 (13) are supported, with an additional leading sign character for negative values.
  * <p><br>
- * All integers are valid integer representations.  The string representation of a fully-numeric value is simply the
- * integer's to-string representation.
+ * All integers (longs) are valid integer representations.  The string representation of a fully-numeric value is simply
+ * the integer's or long's to-string representation.
  * <p><br>
- * Examples of valid and invalid string representations are:
+ * For conversion to and from int:
  * <pre>
  *    (V) valid representations are
+ *        - fully-numeric values from 0 to 999999 (w/o 0 prefix -- zero prefixed values are considered alphanumeric)
+ *        - alphanumeric strings of length 1-5
+ *        - alphanumeric strings of length 6 starting with a letter
+ *        - alphanumeric strings of length 6 starting with a digit from 0-6
+ *        - alphanumeric strings of length 6 starting with a digit and less or equal to "7XIZYJ"
+ *        - all of the above, except zero, with a sign prefix, where
+ *            '-' is the sign for fully-numeric values
+ *            '.' is the sign for all other alphanumeric values
+ *    (I) invalid representations are for instance
+ *        - empty strings
+ *        - strings longer than 7 characters
+ *        - strings longer than 6 characters and no sign prefix
+ *        - strings containing non-alphanumeric characters other than the sign prefix
+ *        - fully-numeric values with alphanumeric '.' sign prefix
+ *        - alphanumeric strings with numeric '-' sign prefix
+ *        - zero-prefixed strings with numeric '-' sign prefix
+ *    --&gt; for more details see {@link AlphaNumericIntCodec}
+ * </pre>
+ *
+ * <p><br>
+ * For conversion to and from long:
+ * <pre>
+ *    (V) valid character sequences are
  *        - a single zero character
- *        - strings with 1-6 digits with no leading zeros
- *        - all alphanumeric strings of length 1-5 with no leading zeros
- *        - all alphanumeric strings of length 1-6 with first char a letter
- *        - all alphanumeric strings of length 1-5 with first char a digit, or 6 chars and value at most '9HYLDS'
+ *        - strings with 1-13 digits with no leading zeros
+ *        - all alphanumeric strings of length 1-12 with no leading zeros
+ *        - all alphanumeric strings of length 13 up to '9HYLDS'
  *        - all of the above, except zero, with a sign prefix, where
  *            '-' is the sign for fully-numeric values
  *            '.' is the sign for all other alpha-numeric values
- *    (I) invalid representations are for instance
+ *    (I) invalid character sequences are for instance
  *        - empty strings
  *        - strings longer than 7 characters
  *        - strings longer than 6 characters and no sign prefix
@@ -49,28 +71,7 @@ package org.tools4j.shortstring;
  *        - zero-prefixed strings, except for zero itself
  *        - digit only strings with a alphanumeric '.' sign prefix
  *        - alphanumeric strings with at least one letter and a numeric '-' sign prefix
- * </pre>
- * A valid string representation follows one of the following definitions:
- * <pre>
- *     (A+) - 1-6 alphanumeric characters, all letters uppercase and no leading zeros
- *          - char  1 : 'A'-'Z', '1'-'9'
- *          - chars 2+: 'A'-'Z', '0'-'9'
- *          - if first char is '9', then length 1-5 or if length 6, then chars[1-6] &lt;= '9HYLDS'
- *     (A-) - 2-7 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase and no leading zeros
- *          - char 1 : '.'
- *          - char 2 : 'A'-'Z", '1'-'9'
- *          - char 3+: 'A'-'Z', '0'-'9'
- *          - at least one char: 'A'-'Z'
- *          - if second char is '9', then length 2-6 or if length 7, then chars[2-7] &lt;= '9HYLDT'
- *     (Z)  - single zero digit character
- *          - char 1: '0'
- *     (N+) - 1-6 digit characters without leading zeros
- *          - char 1 : '1'-'9'
- *          - char 2+: '0'-'9'
- *     (N-) - 2-7 sign-prefixed digit characters: '-' sign followed by 1-6 digits but no leading zeros
- *          - char 1 : '-'
- *          - char 2 : '1'-'9'
- *          - char 3+: '0'-'9'
+ *    --&gt; for more details see {@link AlphaNumericIntCodec}
  * </pre>
  */
 public class AlphaNumericCodec implements ShortStringCodec {
@@ -118,7 +119,7 @@ public class AlphaNumericCodec implements ShortStringCodec {
 
     @Override
     public boolean startsWithSignChar(final CharSequence value) {
-        return CharType.startsWithSignChar(value);
+        return Chars.startsWithSignChar(value);
     }
 
     @Override

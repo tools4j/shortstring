@@ -200,7 +200,7 @@ public final class NumericCodec implements ShortStringCodec {
         if (len < 1 || len > MAX_INT_STRING_LENGTH + 1) {
             return false;
         }
-        final CharSeq seq = CharSeq.sequenceFor(value);
+        final SeqType seq = SeqType.sequenceFor(value);
         switch (seq) {
             case NUMERIC_UNSIGNED:
                 return len < MAX_INT_STRING_LENGTH ||
@@ -217,7 +217,7 @@ public final class NumericCodec implements ShortStringCodec {
         if (len < 1 || len > MAX_LONG_STRING_LENGTH + 1) {
             return false;
         }
-        final CharSeq encoding = CharSeq.sequenceFor(seq);
+        final SeqType encoding = SeqType.sequenceFor(seq);
         switch (encoding) {
             case NUMERIC_UNSIGNED:
                 return len < MAX_LONG_STRING_LENGTH ||

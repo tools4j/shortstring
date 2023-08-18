@@ -25,6 +25,7 @@ package org.tools4j.shortstring;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -32,6 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.lang.reflect.Method;
 import java.util.Random;
+import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Stream;
 
@@ -80,6 +82,85 @@ class ShortStringCodecTest {
                 count);
     }
 
+    @Test
+    void printSome() {
+        final AlphaNumericCodec codec = new AlphaNumericCodec();
+        final Consumer<String> stringPrinter = s -> System.out.println(
+                ("       " + s).substring(s.length()) + " --> " + codec.toInt(s));
+
+        System.out.println();
+        System.out.println("ints -------------------");
+        stringPrinter.accept("00");
+        stringPrinter.accept("09");
+        stringPrinter.accept("0A");
+        stringPrinter.accept("0Z");
+        stringPrinter.accept("000");
+        stringPrinter.accept("0ZZ");
+        stringPrinter.accept("0000");
+        stringPrinter.accept("0ZZZ");
+        stringPrinter.accept("00000");
+        stringPrinter.accept("0ZZZZ");
+        stringPrinter.accept("000000");
+        stringPrinter.accept("00000A");
+        stringPrinter.accept("00000Z");
+        stringPrinter.accept("0ZZZZZ");
+        stringPrinter.accept("1A");
+        stringPrinter.accept("1Z");
+        stringPrinter.accept("9Z");
+        stringPrinter.accept("10A");
+        stringPrinter.accept("10Z");
+        stringPrinter.accept("19999Z");
+        stringPrinter.accept("10000A");
+        stringPrinter.accept("10000Z");
+        stringPrinter.accept("10001A");
+        stringPrinter.accept("10009Z");
+        stringPrinter.accept("99999Z");
+        stringPrinter.accept("1A0");
+        stringPrinter.accept("6ZZZZZ");
+        stringPrinter.accept("7A0000");
+        stringPrinter.accept("7W0000");
+        stringPrinter.accept("7W9999");
+        stringPrinter.accept("7XIZYI");
+        stringPrinter.accept("7XIZYJ");
+        stringPrinter.accept(".6ZZZZZ");
+        stringPrinter.accept(".7A0000");
+        stringPrinter.accept(".7W0000");
+        stringPrinter.accept(".7W9999");
+        stringPrinter.accept(".7XIZYI");
+        stringPrinter.accept(".7XIZYJ");
+        stringPrinter.accept(".7XIZYK");
+
+
+
+        System.out.println(codec.toString(AlphaNumericIntCodec.MIN_NUMERIC));
+        System.out.println(codec.toString(AlphaNumericIntCodec.MAX_NUMERIC));
+        System.out.println(codec.toString(AlphaNumericIntCodec.MIN_NUMERIC - 1));
+        System.out.println(codec.toString(AlphaNumericIntCodec.MAX_NUMERIC + 1));
+        System.out.println(codec.toString(1617038306 + 1_000_000 - 1));
+        System.out.println(codec.toString(1617038306 + 1_000_000));
+        System.out.println(codec.toString(1617038306 + 1_000_000 + 1));
+        System.out.println(codec.toString(1617038306 + 1_000_000 + 62193780 - 1));
+        System.out.println(codec.toString(1617038306 + 1_000_000 + 62193780));
+        System.out.println(codec.toString(1617038306 + 1_000_000 + 62193780 + 1));
+        System.out.println(codec.toString(-(1617038306 + 1_000_000) + 1));
+        System.out.println(codec.toString(-(1617038306 + 1_000_000)));
+        System.out.println(codec.toString(-(1617038306 + 1_000_000) - 1));
+        System.out.println(codec.toString(-(1617038306 + 1_000_000 + 62193780) + 1));
+        System.out.println(codec.toString(-(1617038306 + 1_000_000 + 62193780)));
+        System.out.println(codec.toString(-(1617038306 + 1_000_000 + 62193780) - 1));
+        System.out.println(codec.toString(Integer.MIN_VALUE));
+        System.out.println(codec.toString(Integer.MAX_VALUE));
+
+        System.out.println();
+        System.out.println("longs -----------------");
+        System.out.println(codec.toString(AlphaNumericLongCodec.MIN_NUMERIC));
+        System.out.println(codec.toString(AlphaNumericLongCodec.MAX_NUMERIC));
+        System.out.println(codec.toString(AlphaNumericLongCodec.MIN_NUMERIC - 1));
+        System.out.println(codec.toString(AlphaNumericLongCodec.MAX_NUMERIC + 1));
+        System.out.println(codec.toString(Long.MIN_VALUE));
+        System.out.println(codec.toString(Long.MAX_VALUE));
+    }
+
     @ParameterizedTest(name = "{0}")
     @MethodSource("sourceCodecs")
     void boundaries(final ShortStringCodec codec) {
@@ -107,12 +188,14 @@ class ShortStringCodecTest {
         //when + then
         assertEquals(Integer.MIN_VALUE, codec.toInt(min), min);
         assertEquals(Integer.MAX_VALUE, codec.toInt(max), max);
+        count += 2;
 
         //given
         final String beforeMin = next(min, prev, -1);
         final String beforeMax = next(max, prev, -1);
         final String afterMin = next(min, next, +1);
         final String afterMax = next(max, next, +1);
+        count += 4;
 
         //when + then
         assertEquals(Integer.MIN_VALUE + 1, codec.toInt(beforeMin), beforeMin);
@@ -121,6 +204,7 @@ class ShortStringCodecTest {
 //        assertEquals(Integer.MAX_VALUE - 1, codec.toInt(afterMax), afterMax);
         assertThrows(IllegalArgumentException.class, () -> codec.toInt(afterMin), afterMin);
         assertThrows(IllegalArgumentException.class, () -> codec.toInt(afterMax), afterMax);
+        count += 4;
     }
 
     private static String next(final String value, final IntUnaryOperator nextChar, final int direction) {
@@ -144,13 +228,13 @@ class ShortStringCodecTest {
         final int iterationsPerTest = MAX_LEN == 5 ? 200 : 20;
         final int nFirstChars = 5;
         final int nNextChars = 8;
-        final IntUnaryOperator alphaNum1to8 = i -> (i < 8 ? '1' : 'A' - 8) + i;
+        final IntUnaryOperator alphaNum0to6 = i -> (i < 7 ? '0' : 'A' - 7) + i;
         final IntUnaryOperator alphaNum = i -> (i < 10 ? '0' : 'A' - 10) + i;
         final CharSupplier firstCharSupplier;
         final CharSupplier nextCharSupplier;
         switch (chars) {
             case AlphaNumeric:
-                firstCharSupplier = (charIndex, run) -> run < nNextChars ? (char)alphaNum1to8.applyAsInt(rnd.nextInt(34)) : '\0';
+                firstCharSupplier = (charIndex, run) -> run < nNextChars ? (char)alphaNum0to6.applyAsInt(rnd.nextInt(33)) : '\0';
                 nextCharSupplier = (charIndex, run) -> run < nNextChars ? (char)alphaNum.applyAsInt(rnd.nextInt(36)) : '\0';
                 break;
             case Numeric:
@@ -175,7 +259,7 @@ class ShortStringCodecTest {
         final char[] nextChars;
         switch (chars) {
             case AlphaNumeric:
-                firstChars = new char[]{'1', '8', 'A', 'B', 'Y', 'Z'};
+                firstChars = new char[]{'0', '1', '6', 'A', 'B', 'Y', 'Z'};
                 nextChars = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'C', 'W', 'Z'};
                 break;
             case Numeric:
@@ -279,16 +363,15 @@ class ShortStringCodecTest {
             }
         } else {
             final String pos = String.valueOf(chars, offset, len);
-            final String neg = String.valueOf(chars, offset - 1, len + 1);
+            final boolean num = org.tools4j.shortstring.Chars.isNumeric(pos);
             final boolean zeroStr = "0".equals(pos);
+            final String neg = num ? '-' + pos : String.valueOf(chars, offset - 1, len + 1);
             final StringBuilder result = new StringBuilder();
 
             for (int i = 0; i < iterationsPerTest; i++) {
                 final int posSrc = codec.toInt(pos);
-                final int negSrc = codec.toInt(neg);
                 assertTrue(posSrc >= 0, pos + " >> " + posSrc + " >= 0");
                 assertTrue(posSrc > 0 || zeroStr, pos + " >> " + posSrc + " > 0 || " + pos + " == \"0\"");
-                assertTrue(negSrc < 0, neg + " >> " + negSrc + " < 0");
 
                 result.setLength(0);
                 codec.toString(posSrc, result);
@@ -296,6 +379,9 @@ class ShortStringCodecTest {
                 count++;
 
                 if (zeroStr) continue;
+
+                final int negSrc = codec.toInt(neg);
+                assertTrue(negSrc < 0, neg + " >> " + negSrc + " < 0");
 
                 result.setLength(0);
                 codec.toString(negSrc, result);
