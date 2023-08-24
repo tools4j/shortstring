@@ -23,8 +23,9 @@
  */
 package org.tools4j.shortstring;
 
+import static org.tools4j.shortstring.Chars.indexOfFirstDigit;
+import static org.tools4j.shortstring.Chars.indexOfFirstLetter;
 import static org.tools4j.shortstring.Chars.isAlphanumeric;
-import static org.tools4j.shortstring.Chars.isDigit;
 import static org.tools4j.shortstring.Chars.leq;
 import static org.tools4j.shortstring.Chars.setChar;
 import static org.tools4j.shortstring.Chars.startsWithSignChar;
@@ -93,67 +94,209 @@ public enum AlphaNumericLongCodec {
     private static final long NUMERIC_BLOCK_LENGTH = 10_000_000_000_000L;
     public static final long MIN_NUMERIC = -(NUMERIC_BLOCK_LENGTH - 1);
     public static final long MAX_NUMERIC = NUMERIC_BLOCK_LENGTH - 1;
+
     /**
-     * Length of second block containing alphanumeric values up to 12 digits:
+     * Length of 2nd block containing alphanumeric values up to length 12 prefixed with a letter.
      * <pre>
-     * [1-9A-Z] + [1-9A-Z][0-9A-Z] + [A-Z][0-9A-Z][0-9A-Z] + ...
-     *    35    +       35*36      +      35*36*36         + ... + 35*36^11 = 4,738,381,338,321,616,895
-     * </pre>
+     * [A-Z] + [A-Z][0-9A-Z] + [A-Z][0-9A-Z][0-9A-Z] + ...
+     *  26   +      26*36    +      26*36*36         + ...  = 26 * (36^0 + 36^1 + 36^2 + 36^3 + 36^4 + 36^5 + 36^6 + 36^7 + 36^8 + 36^9 + 36^10 + 36^11)
+     *                                                      = 3,519,940,422,753,201,122
      */
-    private static final long ALPHANUMERIC_12_BLOCK_LENGTH = 35L*(1L + 36L*(1L + 36L*(1L + 36L*(1L + 36*(1L + 36L*(1L + 36L*(1L + 36*(1L + 36L*(1L + 36L*(1L + 36L*(1L + 36L)))))))))));
+    private static final long ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH = 3519940422753201122L;
+
     /**
-     * Length of third block containing alphanumeric values of length 13 allowing digits only for the last 2.
+     * Length of 3rd block containing alphanumeric values up to length 12 with a leading zero digit (w/o '0' itself
+     * which is numeric).
      * <pre>
-     * [A-Z]^11 * [0-9A-Z]^2  =
-     *   26^11  *    36^2     = 4,756,766,455,136,157,696
+     * [0][0-9A-Z] + [0][0-9A-Z][0-9A-Z] + [0][0-9A-Z][0-9A-Z][0-9A-Z] + ...
+     *       36    +         36*36       +           36*36*36          + ...  = 36^1 + 36^2 + 36^3 + 36^4 + 36^5 + 36^6 + 36^7 + 36^8 + 36^9 + 36^10 + 36^11
+     *                                                                        = 135,382,323,952,046,196
+     */
+    private static final long ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH = 135382323952046196L;
+
+    /**
+     * Length of 4th block containing alphanumeric values up to length 12 with a leading non-zero digit.
+     * To be non-numeric, the block must have a letter somewhere.
+     * We order by the letter position from the end:
+     * <pre>
+     * L(n)   : letter at n-th position of string with n chars
+     * L(n-i) : letter at (n-i)-th position of string with n chars
+     *
+     * L(n)   = [1-9][A-Z] + [1-9][0-9][A-Z] + ... + [1-9][0-9]...[0-9][A-Z] = 9 * (10^0 + 10^1 + ... + 10^3 + 10^10) * 26
+     *                                                                       =  (10^11 - 1)   * 26
+     *                                                                       = 99,999,999,999 * 26
+     *                                                                       = 2,599,999,999,974
+     * L(n-1) = [1-9][A-Z][0-9A-Z] + [1-9][0-9][A-Z][0-9A-Z] + ... + [1-9][0-9][0-9][0-9][A-Z][0-9A-Z]
+     *                                                                       =  (10^10 - 1)  * 26 * 36
+     *                                                                       = 9,999,999,999 * 26 * 36
+     *                                                                       = 9,359,999,999,064
+     *  ...
+     * L(n-4) = [1-9][A-Z][0-9A-Z]...[0-9A-Z]                                = 9 * 26 * 36^10
+     *                                                                       = 855,541,074,974,736,384
+     *
+     * L(n-i) = [1-9] | [0-9]^[0..(4-i)] | [A-Z][0-9A-Z]^i                   = (10^(11-i) - 1) * 26 * 36^i
+     *
+     * @see #ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTH
+     */
+    private static final long[] ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTHS = {
+            (100000000000L - 1) * 26,
+            (10000000000L - 1) * 26 * 36,
+            (1000000000L - 1) * 26 * 36 * 36,
+            (100000000L - 1) * 26 * 36 * 36 * 36,
+            (10000000L - 1) * 26 * 36 * 36 * 36 * 36,
+            (1000000L - 1) * 26 * 36 * 36 * 36 * 36 * 36,
+            (100000L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36,
+            (10000L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36 * 36,
+            (1000L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36,
+            (100L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36,
+            (10L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36};
+    /**
+     * Total length of the 4th block containing alphanumeric values up to length 12 with a leading non-zero digit.
+     *
+     * @see #ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTHS
+     */
+    private static final long ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTH =
+            (100000000000L - 1) * 26 +
+            (10000000000L - 1) * 26 * 36 +
+            (1000000000L - 1) * 26 * 36 * 36 +
+            (100000000L - 1) * 26 * 36 * 36 * 36 +
+            (10000000L - 1) * 26 * 36 * 36 * 36 * 36 +
+            (1000000L - 1) * 26 * 36 * 36 * 36 * 36 * 36 +
+            (100000L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36 +
+            (10000L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36 * 36 +
+            (1000L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36 +
+            (100L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36 +
+            (10L - 1) * 26 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36 * 36;
+
+    /**
+     * Length of 8th block containing alphanumeric values of length 13 with
+     * <pre>
+     *    (0) only letters
+     *    (1) a single digit at the last position
+     *    (2) a digit at the second last position (and possibly on the last as well)
      * </pre>
      *
-     * but we have only 4,484,980,698,533,158,912 left, so we can encode ~94.29% of all values of length 13.
+     * We have
+     * <pre>
+     *    (0) [A-Z]...[A-Z][A-Z][A-Z]    = 26^13           = 2,481,152,873,203,736,576
+     *    (1) [A-Z]...[A-Z][A-Z][0-9]    = 26^12 * 10      =   954,289,566,616,821,760
+     *    (2) [A-Z]...[A-Z][0-9][0-9A-Z] = 26^11 * 10 * 36 = 1,321,324,015,315,599,360
+     *                                               Total = 4,756,766,455,136,157,696
+     * </pre>
+     * However, we have only 4,349,599,374,581,112,715 values left, hence we support
+     * <pre>
+     * - 0% of values of length 13 with a digit before position 12
+     * - 69.2% of values of length 13 with a digit at position 12
+     * - 91.4% of values of length 13 with no digit or with a digit at or after position 12
+     * - 100% of all values of length 13 without a digit or with a digit at position 13
+     * </pre>
      */
-    private static final long ALPHANUMERIC_13_BLOCK_LENGTH = Long.MAX_VALUE - NUMERIC_BLOCK_LENGTH - ALPHANUMERIC_12_BLOCK_LENGTH;
+    private static final long[] ALPHANUMERIC_EQ_13_BLOCK_LENGTHS = {
+            (26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L),
+            (26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L) * 10L,
+            (26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L) * 10L * 36L
+    };
 
-    public static final String MAX_ALPHANUMERIC = "ZZZZZZZZZxxxx";
-    public static final String MIN_ALPHANUMERIC = ".ZZZZZZZZZxxxx";
+    public static final String MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12 = "RZRYMFXOEDX77";
+    public static final String MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12 = ".RZRYMFXOEDX78";
 
     public static long toLong(final CharSequence value) {
-//        final CharSeq seq = CharSeq.sequenceFor(value);
-//        final int len = value.length();
-//        final int off = seq.isSigned() ? 1 : 0;
-//        long code;
-//        if (seq.isNumeric()) {
-//            code = fromDigit(value.charAt(off), value);
-//            for (int i = off + 1; i < len; i++) {
-//                code *= 10;
-//                code += fromDigit(value.charAt(i), value);
-//            }
-//            return off == 0 ? code : -code;
-//        }
-//        if (seq.isAlphanumeric() && (len == 12 && off == 0 || len == 13 && off != 0)) {
-//            code = fromAlphanumeric0(value.charAt(off), value);
-//            for (int i = off + 1; i < len; i++) {
-//                code *= 36;
-//                code += 35 + fromAlphanumeric(value.charAt(i), value);
-//            }
-//            code += NUMERIC_BLOCK_LENGTH;
-//        } else if (seq.isAlphanumeric() && (len == 13 && off == 0 || len == 14 && off != 0)
-//                && CharSeq.sequenceFor(value, len - 2).isAlphaOnly()
-//        ) {
-//            code = fromAlpha(value.charAt(off), value);
-//            for (int i = off + 1; i < len - 2; i++) {
-//                code *= 26;
-//                code += fromAlpha(value.charAt(i), value);
-//            }
-//            code += fromAlphanumeric(value.charAt(off + len - 2), value);
-//            code *= 36;
-//            code += fromAlphanumeric(value.charAt(off + len - 1), value);
-//            code *= 36;
-//            code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_12_BLOCK_LENGTH;
-//        } else {
-//            throw new IllegalArgumentException(len == 0 ? "Empty value string" : "Invalid value string: " + value);
-//        }
-//        assert code >= 0 || code == Long.MIN_VALUE;
-//        return off == 0 ? code : -code;
-        return 0;
+        final int len = value.length();
+        final int off = Chars.startsWithSignChar(value) ? 1 : 0;
+        if (len <= off) {
+            throw new IllegalArgumentException(len == 0 ? "Empty value string" : "Invalid sign-only string: " + value);
+        }
+        if (len - off > MAX_LENGTH_UNSIGNED) {
+            throw new IllegalArgumentException("String exceeds max length: " + value);
+        }
+        final SeqType seqType = SeqType.sequenceFor(value);
+        long code;
+        if (seqType.isNumeric()) {
+            code = fromDigit(value.charAt(off), value);
+            for (int i = off + 1; i < len; i++) {
+                code *= 10;
+                code += fromDigit(value.charAt(i), value);
+            }
+            return off == 0 ? code : -code;
+        }
+        if (len - off <= 12) {
+            if (seqType.isLetterPrefixAlphanumeric()) {
+                code = fromLetter(value.charAt(off), value);
+                for (int i = off + 1; i < len; i++) {
+                    code *= 36;
+                    code += 26 + fromAlphanumeric(value.charAt(i), value);
+                }
+                code += NUMERIC_BLOCK_LENGTH;
+                return off == 0 ? code : -code;
+            }
+            final char firstChar = seqType.isDigitPrefixAlphanumeric() ? value.charAt(off) : '\0';
+            if (firstChar == '0') {
+                code = fromAlphanumeric(value.charAt(off + 1), value);
+                for (int i = off + 2; i < len; i++) {
+                    code *= 36;
+                    code += 36 + fromAlphanumeric(value.charAt(i), value);
+                }
+                code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH;
+                return off == 0 ? code : -code;
+            }
+            if ('1' <= firstChar && firstChar <= '9') {
+                final int indexOfFirstLetter = indexOfFirstLetter(value, off + 1, len);
+                assert indexOfFirstLetter >= off + 1;
+                code = firstChar - '1';
+                for (int i = off + 1; i < indexOfFirstLetter; i++) {
+                    code *= 10;
+                    code += 9 + fromDigit(value.charAt(i), value);
+                }
+                code *= 26;
+                code += fromLetter(value.charAt(indexOfFirstLetter), value);
+                for (int i = indexOfFirstLetter + 1; i < len; i++) {
+                    code *= 36;
+                    code += fromAlphanumeric(value.charAt(i), value);
+                }
+                code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH;
+                final int subBlockIndex = len - indexOfFirstLetter - 1;
+                for (int i = 0; i < subBlockIndex; i++) {
+                    code += ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTHS[i];
+                }
+                return off == 0 ? code : -code;
+            }
+            throw new IllegalArgumentException("Invalid value string: " + value);
+        }
+        final int indexOfFirstDigit = indexOfFirstDigit(value, off, len);
+        if ((indexOfFirstDigit < 0 || indexOfFirstDigit - off >= 11) && seqType.isLetterPrefixAlphanumeric()) {
+            final int indexOfLastLetterBeforeFirstDigit = (indexOfFirstDigit < 0 ? len : indexOfFirstDigit) - 1;
+            code = fromLetter(value.charAt(off), value);
+            for (int i = off + 1; i <= indexOfLastLetterBeforeFirstDigit; i++) {
+                code *= 26;
+                code += fromLetter(value.charAt(i), value);
+            }
+            long subBlockAddOn = 0;
+            if (indexOfLastLetterBeforeFirstDigit + 1 < len) {
+                code *= 10;
+                code += fromDigit(value.charAt(indexOfLastLetterBeforeFirstDigit + 1), value);
+                subBlockAddOn += ALPHANUMERIC_EQ_13_BLOCK_LENGTHS[0];
+            }
+            if (indexOfLastLetterBeforeFirstDigit + 2 < len) {
+                code *= 36;
+                code += fromAlphanumeric(value.charAt(indexOfLastLetterBeforeFirstDigit + 2), value);
+                subBlockAddOn += ALPHANUMERIC_EQ_13_BLOCK_LENGTHS[1];
+            }
+            code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH
+                    + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTH
+                    + subBlockAddOn;
+            if (code < 0) {
+                if (code != Long.MIN_VALUE || !isConvertibleToLong(value)) {
+                    throw new IllegalArgumentException(
+                            "Alphanumeric 13-char value exceeds max allowed: " + value + (off == 0
+                                    ? (" > " + MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12)
+                                    : (" < " + MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12)));
+                }
+            }
+            return off == 0 ? code : -code;
+        }
+        throw new IllegalArgumentException((seqType.isAlphanumeric()
+                ? "Alphanumeric 13-char value must not have a digit before position 12: "
+                : "Invalid value string: ") + value);
     }
 
     public static StringBuilder toString(final long value, final StringBuilder dst) {
@@ -173,35 +316,103 @@ public enum AlphaNumericLongCodec {
                     break;
                 }
             }
-        } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_12_BLOCK_LENGTH) &&
-                value < (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_12_BLOCK_LENGTH)) {
+        } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH) &&
+                value < (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH)) {
             sign = '.';
             val -= NUMERIC_BLOCK_LENGTH;
             for (int i = 11; i >= 0; i--) {
-                if (val < 35) {
-                    final char ch = toAlphanumeric0(val);
+                if (val < 26) {
+                    final char ch = toLetter0(val);
                     setChar(ch, dst, off + i);
                     start = off + i;
                     break;
                 }
-                val -= 35;
+                val -= 26;
                 final char ch = toAlphanumeric(val);
                 setChar(ch, dst, off + i);
                 val /= 36;
+            }
+        } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH) &&
+                value < (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH)) {
+            sign = '.';
+            val -= (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH);
+            for (int i = 11; i >= 1; i--) {
+                if (val < 36) {
+                    final char ch = toAlphanumeric0(val);
+                    setChar(ch, dst, off + i);
+                    setChar('0', dst, off + i - 1);
+                    start = off + i - 1;
+                    break;
+                }
+                val -= 36;
+                final char ch = toAlphanumeric(val);
+                setChar(ch, dst, off + i);
+                val /= 36;
+            }
+        } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTH) &&
+                value < (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTH)) {
+            sign = '.';
+            val -= (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH);
+            int subBlockIndex = -1;
+            for (int i = 0; i < ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTHS.length; i++) {
+                final long blockLength = ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTHS[i];
+                if (val < blockLength) {
+                    subBlockIndex = i;
+                    break;
+                }
+                val -= blockLength;
+            }
+            assert subBlockIndex >= 0;
+            for (int i = 0; i < subBlockIndex; i++) {
+                final char ch = toAlphanumeric(val);
+                setChar(ch, dst, off + 11 - i);
+                val /= 36;
+            }
+            final char letter = toLetter(val);
+            setChar(letter, dst, off + 11 - subBlockIndex);
+            val /= 26;
+            for (int i = subBlockIndex + 1; i <= 11; i++) {
+                if (val < 9) {
+                    final char ch = (char)(val + '1');
+                    setChar(ch, dst, off + 11 - i);
+                    start = off + 11 - i;
+                    break;
+                }
+                val -= 9;
+                final char ch = toDigit(val);
+                setChar(ch, dst, off + 10 - i);
+                val /= 10;
             }
         } else {
             sign = '.';
-            val -= (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_12_BLOCK_LENGTH);
-            for (int i = 12; i >= 11; i--) {
-                final char ch = toAlphanumeric(val);
-                setChar(ch, dst, off + i);
+            val -= (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTH);
+            int subBlockIndex = -1;
+            for (int i = 0; i < ALPHANUMERIC_EQ_13_BLOCK_LENGTHS.length; i++) {
+                final long blockLength = ALPHANUMERIC_EQ_13_BLOCK_LENGTHS[i];
+                if (val < blockLength) {
+                    subBlockIndex = i;
+                    break;
+                }
+                val -= blockLength;
+            }
+            assert subBlockIndex >= 0;
+            char ch;
+            if (subBlockIndex > 1) {
+                ch = toAlphanumeric(val);
+                setChar(ch, dst, off + 12);
                 val /= 36;
             }
-            for (int i = 10; i >= 0; i--) {
-                final char ch = toAlphanumeric(val);
-                setChar(ch, dst, off + i);
+            if (subBlockIndex > 0) {
+                ch = toDigit(val);
+                setChar(ch, dst, off + 12 - (subBlockIndex - 1));
+                val /= 10;
+            }
+            for (int i = subBlockIndex; i <= 12; i++) {
+                ch = toLetter(val);
+                setChar(ch, dst, off + 12 - i);
                 val /= 26;
             }
+            assert val == 0;
         }
         if (value < 0) {
             start--;
@@ -230,17 +441,30 @@ public enum AlphaNumericLongCodec {
         if (!isAlphanumeric(value, off, len)) {
             return false;
         }
-        if (!isDigit(value.charAt(off))) {
+        final int indexOfFirstDigit = indexOfFirstDigit(value, off, len);
+        if ((indexOfFirstDigit < 0 || indexOfFirstDigit - off == 12)) {
             return true;
         }
+        if ((indexOfFirstDigit - off < 11)) {
+            return false;
+        }
         return signed ?
-                leq(value, MIN_ALPHANUMERIC) :
-                leq(value, MAX_ALPHANUMERIC);
+                leq(value, MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12) :
+                leq(value, MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12);
+    }
+
+    private static char toLetter0(final long value) {
+        assert 0 <= value && value < 26;
+        return (char)(value + 'A');
     }
 
     private static char toAlphanumeric0(final long value) {
-        final long code = value % 35;
-        return (char)(code + (code < 9 ? '1' : 'A' - 9));
+        assert 0 <= value && value < 36;
+        return (char)(value + (value < 10 ? '0' : 'A' - 10));
+    }
+    private static char toLetter(final long value) {
+        final long code = value % 26;
+        return (char)(code + 'A');
     }
 
     private static char toAlphanumeric(final long value) {
@@ -253,18 +477,18 @@ public enum AlphaNumericLongCodec {
         return (char)(code + '0');
     }
 
-    private static int fromAlpha(final char ch, final CharSequence seq) {
+    private static int fromLetter(final char ch, final CharSequence seq) {
         if ('A' <= ch && ch <= 'Z') {
             return ch - 'A';
         }
-        throw new IllegalArgumentException("Illegal first character '" + ch + "' in value string: " + seq);
+        throw new IllegalArgumentException("Illegal letter character '" + ch + "' in value string: " + seq);
     }
 
     private static int fromDigit(final char ch, final CharSequence seq) {
         if ('0' <= ch && ch <= '9') {
             return ch - '0';
         }
-        throw new IllegalArgumentException("Illegal character '" + ch + "' in value string: " + seq);
+        throw new IllegalArgumentException("Illegal digit character '" + ch + "' in value string: " + seq);
     }
 
     private static int fromAlphanumeric(final char ch, final CharSequence seq) {
@@ -273,15 +497,6 @@ public enum AlphaNumericLongCodec {
         }
         if ('A' <= ch && ch <= 'Z') {
             return 10 + ch - 'A';
-        }
-        throw new IllegalArgumentException("Illegal character '" + ch + "' in value string: " + seq);
-    }
-    private static int fromAlphanumeric0(final char ch, final CharSequence seq) {
-        if ('1' <= ch && ch <= '9') {
-            return ch - '1';
-        }
-        if ('A' <= ch && ch <= 'Z') {
-            return 9 + ch - 'A';
         }
         throw new IllegalArgumentException("Illegal character '" + ch + "' in value string: " + seq);
     }

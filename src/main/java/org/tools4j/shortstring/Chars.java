@@ -60,6 +60,19 @@ enum Chars {
         return true;
     }
 
+    static boolean eq(final CharSequence a, final CharSequence b) {
+        final int len;
+        if ((len = a.length()) != b.length()) {
+            return false;
+        }
+        for (int i = 0; i < len; i++) {
+            if (a.charAt(i) != b.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     static boolean isDigit(final char ch) {
         return '0' <= ch && ch <= '9';
     }
@@ -88,6 +101,15 @@ enum Chars {
     static int indexOfFirstLetter(final CharSequence seq, final int start, final int end) {
         for (int i = start; i < end; i++) {
             if (isLetter(seq.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    static int indexOfFirstDigit(final CharSequence seq, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            if (isDigit(seq.charAt(i))) {
                 return i;
             }
         }

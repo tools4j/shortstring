@@ -42,6 +42,10 @@ enum SeqType {
         return this == NUMERIC_UNSIGNED || this == NUMERIC_SIGNED;
     }
 
+    public boolean isAlphanumeric() {
+        return isLetterPrefixAlphanumeric() || isDigitPrefixAlphanumeric();
+    }
+
     public boolean isLetterPrefixAlphanumeric() {
         return this == LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED || this == LETTER_PREFIXED_ALPHANUMERIC_SIGNED;
     }
@@ -50,26 +54,20 @@ enum SeqType {
         return this == DIGIT_PREFIXED_ALPHANUMERIC_UNSIGNED || this == DIGIT_PREFIXED_ALPHANUMERIC_SIGNED;
     }
 
-    public boolean isAlphanumeric() {
-        return isLetterPrefixAlphanumeric() || isDigitPrefixAlphanumeric();
-    }
     static SeqType sequenceFor(final CharSequence seq) {
-        return sequenceFor(seq, seq.length());
-    }
-
-    static SeqType sequenceFor(final CharSequence seq, final int length) {
-        if (length == 0) {
+        final int len = seq.length();
+        if (len == 0) {
             return INVALID;
         }
         final CharType charType = CharType.forChar(seq.charAt(0));
-        if (length == 1) {
+        if (len == 1) {
             return forSingleChar(charType);
         }
         SeqType type = forMultiChar(charType, seq.charAt(1));
-        for (int i = 2; i < length; i++) {
+        for (int i = 2; i < len; i++) {
             type = type.thenChar(seq.charAt(i));
         }
-        if (length == 2 && type == DIGIT_PREFIXED_ALPHANUMERIC_SIGNED) {
+        if (len == 2 && type == DIGIT_PREFIXED_ALPHANUMERIC_SIGNED) {
             //".0' to ".9" are all invalid, but ".0' is valid
             return INVALID;
         }

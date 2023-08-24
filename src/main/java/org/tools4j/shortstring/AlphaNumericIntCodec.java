@@ -82,15 +82,32 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  *          - char 1 : '.'
  *          - char 2: '0'
  *          - char 3+: '0'-'9', 'A'-'Z'
- *     (D+) 1-6 alphanumeric characters, all letters uppercase, first character non-zero digit and at least one letter
+ *     (D+) 2-6 alphanumeric characters, all letters uppercase, first character non-zero digit and at least one letter
  *          - char  1 : '1'-'9'
  *          - char  2+ : '0'-'9', 'A'-'Z' (at least one 'A'-'Z')
  *          - if first char is more than '7'-'9', then length 1-5 or otherwise chars[1-6] &lt;= '7XIZYJ'
- *     (D-) - 2-7 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase, first character non-zero digit and at least one letter
+ *     (D-) - 3-7 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase, first character non-zero digit and at least one letter
  *          - char 1 : '.'
  *          - char 2 : '1'-'9'
  *          - char 3+: '0'-'9', 'A'-'Z' (at least one 'A'-'Z')
  *          - if second char is '7'-'9', then length 1-5 or otherwise chars[1-6] &lt;= '7XIZYJ'
+ * </pre>
+ * The integer range is grouped accordingly into the following sections:
+ * <pre>
+ *  +------+--------------------------------------------------------+-------------------------------------+---------------+
+ *  | Grp  | String range                                           | Integer range                       | # of elements |
+ *  +------+--------------------------------------------------------+-------------------------------------+---------------+
+ *  | (D+) | "1A", "1B", ..., "10A", ..., "1A0", ..., "7XIZYJ"      |    1,680,232,086 -   2,147,483,647  |   467,251,562 |
+ *  | (Z+) | "00", "01", ..., "0A", "0B", ..., "007", ..., "0ZZZZZ" |    1,618,038,306 -   1,680,232,085  |    62,193,780 |
+ *  | (A+) | "A", "B", ..., "A0", "A1", ..., "ZZZZZZ"               |        1,000,000 -   1,618,038,305  | 1,617,038,306 |
+ *  | (N+) | "1", "2", ..., "9", "10", ..., "999999"                |                1 -         999,999  |       999,999 |
+ *  | (N0) | "0"                                                    |                                  0  |             1 |
+ *  | (N-) | "-1", "-2", ..., "-9", "-10", ..., "-999999"           |             (-1) -       (-999,999) |       999,999 |
+ *  | (A-) | ".A", ".B", ..., ".A0", ".A1", ..., ".ZZZZZZ"          |     (-1,000,000) - (-1,618,038,305) | 1,617,038,306 |
+ *  | (Z-) | ".00", ".01", ..., ".0A", ..., ".007", ..., ".0ZZZZZ"  | (-1,618,038,306) - (-1,680,232,085) |    62,193,780 |
+ *  | (D-) | ".1A", ".1B", ..., ".10A", ..., ".1A0", ..., ".7XIZYK" | (-1,680,232,086) - (-2,147,483,648) |   467,251,563 |
+ *  +------+--------------------------------------------------------+-------------------------------------+---------------+
+ *
  * </pre>
  */
 public enum AlphaNumericIntCodec {
@@ -112,7 +129,7 @@ public enum AlphaNumericIntCodec {
      *  26   +      26*36    +      26*36*36         + ...  = 26 * (36^0 + 36^1 + 36^2 + 36^3 + 36^4 + 36^5)
      *                                                      = 1,617,038,306
      */
-    private static final int ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH = 1617038306;
+    private static final int ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH = 1617038306;
 
     /**
      * Length of 3rd block containing alphanumeric values with a leading zero digit (w/o '0' itself which is numeric).
@@ -121,7 +138,7 @@ public enum AlphaNumericIntCodec {
      *       36    +         36*36       +           36*36*36          + ...  = 36^1 + 36^2 + 36^3 + 36^4 + 36^5
      *                                                                        = 62,193,780
      */
-    private static final int ALPHA_NUMERIC_ZERO_PREFIXED_BLOCK_LENGTH = 62193780;
+    private static final int ALPHANUMERIC_ZERO_PREFIXED_BLOCK_LENGTH = 62193780;
     /**
      * Length of 4th block containing alphanumeric values with a leading non-zero digit.
      * To be non-numeric, the block must have a letter somewhere.
@@ -154,7 +171,7 @@ public enum AlphaNumericIntCodec {
      *    L(*)   = 558,744,030
      *
      * </pre>
-     * All 5 blocks have a total length of 558,744,030, but we have only 467,251,561 values left.
+     * All 5 blocks have a total length of 558,744,030, but we have only 467,251,562 values left.
      * We support them in ascending order, that is, we only support
      * <pre>
      * - 83.6% of all digit prefixed values
@@ -163,19 +180,19 @@ public enum AlphaNumericIntCodec {
      * - 100% of all other digit prefixed values
      * </pre>
      *
-     * @see #ALPHA_NUMERIC_DIGIT_PREFIXED_BLOCK_LENGTH
+     * @see #ALPHANUMERIC_DIGIT_PREFIXED_BLOCK_LENGTH
      */
-    private static final int[] ALPHA_NUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS = {
+    private static final int[] ALPHANUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS = {
             2599974, 9359064, 33662304, 120092544, 558744030};
     /**
      * The actual length of the 4th block containing alphanumeric values with a leading non-zero digit, cutting out
      * some elements of the L(n-4) sub-block.
      *
-     * @see #ALPHA_NUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS
+     * @see #ALPHANUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS
      */
-    private static final int ALPHA_NUMERIC_DIGIT_PREFIXED_BLOCK_LENGTH = Integer.MAX_VALUE
-            - NUMERIC_BLOCK_LENGTH - ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH
-            - ALPHA_NUMERIC_ZERO_PREFIXED_BLOCK_LENGTH;
+    private static final int ALPHANUMERIC_DIGIT_PREFIXED_BLOCK_LENGTH = Integer.MAX_VALUE
+            - NUMERIC_BLOCK_LENGTH - ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH
+            - ALPHANUMERIC_ZERO_PREFIXED_BLOCK_LENGTH + 1;
 
     public static final int MAX_NUMERIC = 999_999;
     public static final int MIN_NUMERIC = -999_999;
@@ -217,7 +234,7 @@ public enum AlphaNumericIntCodec {
                 code *= 36;
                 code += 36 + fromAlphanumeric(value.charAt(i), value);
             }
-            code += NUMERIC_BLOCK_LENGTH + ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH;
+            code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH;
             return off == 0 ? code : -code;
         }
         if ('1' <= firstChar && firstChar <= '9') {
@@ -234,15 +251,15 @@ public enum AlphaNumericIntCodec {
                 code *= 36;
                 code += fromAlphanumeric(value.charAt(i), value);
             }
-            code += NUMERIC_BLOCK_LENGTH + ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHA_NUMERIC_ZERO_PREFIXED_BLOCK_LENGTH;
+            code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_ZERO_PREFIXED_BLOCK_LENGTH;
             final int subBlockIndex = len - indexOfFirstLetter - 1;
             for (int i = 0; i < subBlockIndex; i++) {
-                code += ALPHA_NUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS[i];
+                code += ALPHANUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS[i];
             }
             if (code < 0) {
                 if (code != Integer.MIN_VALUE || !isConvertibleToInt(value)) {
                     throw new IllegalArgumentException(
-                            " digit-prefixed value exceeds max allowed: " + value + (off == 0
+                            "Digit-prefixed value exceeds max allowed: " + value + (off == 0
                                     ? (" > " + MAX_DIGIT_PREFIXED_ALPHANUMERIC)
                                     : (" < " + MIN_DIGIT_PREFIXED_ALPHANUMERIC)));
                 }
@@ -269,8 +286,8 @@ public enum AlphaNumericIntCodec {
                     break;
                 }
             }
-        } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH) &&
-                value < (NUMERIC_BLOCK_LENGTH + ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH)) {
+        } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH) &&
+                value < (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH)) {
             sign = '.';
             val -= NUMERIC_BLOCK_LENGTH;
             for (int i = 5; i >= 0; i--) {
@@ -281,33 +298,33 @@ public enum AlphaNumericIntCodec {
                     break;
                 }
                 val -= 26;
-                final char ch = toAlphaNumeric(val);
+                final char ch = toAlphanumeric(val);
                 setChar(ch, dst, off + i);
                 val /= 36;
             }
-        } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHA_NUMERIC_ZERO_PREFIXED_BLOCK_LENGTH) &&
-                value < (NUMERIC_BLOCK_LENGTH + ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHA_NUMERIC_ZERO_PREFIXED_BLOCK_LENGTH)) {
+        } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_ZERO_PREFIXED_BLOCK_LENGTH) &&
+                value < (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_ZERO_PREFIXED_BLOCK_LENGTH)) {
             sign = '.';
-            val -= (NUMERIC_BLOCK_LENGTH + ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH);
+            val -= (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH);
             for (int i = 5; i >= 1; i--) {
                 if (val < 36) {
-                    final char ch = toAlphaNumeric0(val);
+                    final char ch = toAlphanumeric0(val);
                     setChar(ch, dst, off + i);
                     setChar('0', dst, off + i - 1);
                     start = off + i - 1;
                     break;
                 }
                 val -= 36;
-                final char ch = toAlphaNumeric(val);
+                final char ch = toAlphanumeric(val);
                 setChar(ch, dst, off + i);
                 val /= 36;
             }
         } else {
             sign = '.';
-            val -= (NUMERIC_BLOCK_LENGTH + ALPHA_NUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHA_NUMERIC_ZERO_PREFIXED_BLOCK_LENGTH);
+            val -= (NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_ZERO_PREFIXED_BLOCK_LENGTH);
             int subBlockIndex = -1;
-            for (int i = 0; i < ALPHA_NUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS.length; i++) {
-                final int blockLength = ALPHA_NUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS[i];
+            for (int i = 0; i < ALPHANUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS.length; i++) {
+                final int blockLength = ALPHANUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS[i];
                 if (val < blockLength) {
                     subBlockIndex = i;
                     break;
@@ -316,7 +333,7 @@ public enum AlphaNumericIntCodec {
             }
             assert subBlockIndex >= 0;
             for (int i = 0; i < subBlockIndex; i++) {
-                final char ch = toAlphaNumeric(val);
+                final char ch = toAlphanumeric(val);
                 setChar(ch, dst, off + 5 - i);
                 val /= 36;
             }
@@ -376,7 +393,7 @@ public enum AlphaNumericIntCodec {
         return (char)(value + 'A');
     }
 
-    private static char toAlphaNumeric0(final int value) {
+    private static char toAlphanumeric0(final int value) {
         assert 0 <= value && value < 36;
         return (char)(value + (value < 10 ? '0' : 'A' - 10));
     }
@@ -386,7 +403,7 @@ public enum AlphaNumericIntCodec {
         return (char)(code + 'A');
     }
 
-    private static char toAlphaNumeric(final int value) {
+    private static char toAlphanumeric(final int value) {
         final int code = value % 36;
         return (char)(code + (code < 10 ? '0' : 'A' - 10));
     }
@@ -400,14 +417,14 @@ public enum AlphaNumericIntCodec {
         if ('A' <= ch && ch <= 'Z') {
             return ch - 'A';
         }
-        throw new IllegalArgumentException("Illegal first character '" + ch + "' in value string: " + seq);
+        throw new IllegalArgumentException("Illegal letter character '" + ch + "' in value string: " + seq);
     }
 
     private static int fromDigit(final char ch, final CharSequence seq) {
         if ('0' <= ch && ch <= '9') {
             return ch - '0';
         }
-        throw new IllegalArgumentException("Illegal character '" + ch + "' in value string: " + seq);
+        throw new IllegalArgumentException("Illegal digit character '" + ch + "' in value string: " + seq);
     }
 
     private static int fromAlphanumeric(final char ch, final CharSequence seq) {

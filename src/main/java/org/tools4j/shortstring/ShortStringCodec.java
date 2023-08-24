@@ -100,7 +100,7 @@ public interface ShortStringCodec {
      * @return the string representation of the value
      */
     default String toString(final long value) {
-        return toString(value, new StringBuilder(maxIntLength())).toString();
+        return toString(value, new StringBuilder(maxLongLength())).toString();
     }
 
     /**

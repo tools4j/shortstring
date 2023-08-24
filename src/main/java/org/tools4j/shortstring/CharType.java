@@ -46,12 +46,4 @@ enum CharType {
         }
         return OTHER;
     }
-
-    static boolean isSignChar(final char ch) {
-        return ch == '.' || ch == '-';
-    }
-
-    static boolean startsWithSignChar(final CharSequence seq) {
-        return seq.length() > 0 && isSignChar(seq.charAt(0));
-    }
 }

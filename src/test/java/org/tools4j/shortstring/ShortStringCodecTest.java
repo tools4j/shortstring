@@ -25,6 +25,7 @@ package org.tools4j.shortstring;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,12 +35,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.lang.reflect.Method;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import java.util.function.IntUnaryOperator;
+import java.util.function.LongConsumer;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.tools4j.shortstring.Chars.eq;
 
 /**
  * Unit test for {@link ShortStringCodec} and implementations.
@@ -83,13 +87,17 @@ class ShortStringCodecTest {
     }
 
     @Test
-    void printSome() {
+    void printSomeInts() {
         final AlphaNumericCodec codec = new AlphaNumericCodec();
-        final Consumer<String> stringPrinter = s -> System.out.println(
-                ("       " + s).substring(s.length()) + " --> " + codec.toInt(s));
+        final Consumer<String> stringPrinter = s -> {
+            System.out.println(("       " + s).substring(s.length()) + " --> " + codec.toInt(s));
+            count++;
+        };
+        final IntConsumer intPrinter = i -> {
+            System.out.println(("       " + i).substring(("" + i).length()) + " --> " + codec.toString(i));
+            count++;
+        };
 
-        System.out.println();
-        System.out.println("ints -------------------");
         stringPrinter.accept("00");
         stringPrinter.accept("09");
         stringPrinter.accept("0A");
@@ -130,35 +138,127 @@ class ShortStringCodecTest {
         stringPrinter.accept(".7XIZYJ");
         stringPrinter.accept(".7XIZYK");
 
+        intPrinter.accept(AlphaNumericIntCodec.MIN_NUMERIC);
+        intPrinter.accept(AlphaNumericIntCodec.MAX_NUMERIC);
+        intPrinter.accept(AlphaNumericIntCodec.MIN_NUMERIC - 1);
+        intPrinter.accept(AlphaNumericIntCodec.MAX_NUMERIC + 1);
+        intPrinter.accept(1617038306 + 1_000_000 - 1);
+        intPrinter.accept(1617038306 + 1_000_000);
+        intPrinter.accept(1617038306 + 1_000_000 + 1);
+        intPrinter.accept(1617038306 + 1_000_000 + 62193780 - 1);
+        intPrinter.accept(1617038306 + 1_000_000 + 62193780);
+        intPrinter.accept(1617038306 + 1_000_000 + 62193780 + 1);
+        intPrinter.accept(-(1617038306 + 1_000_000) + 1);
+        intPrinter.accept(-(1617038306 + 1_000_000));
+        intPrinter.accept(-(1617038306 + 1_000_000) - 1);
+        intPrinter.accept(-(1617038306 + 1_000_000 + 62193780) + 1);
+        intPrinter.accept(-(1617038306 + 1_000_000 + 62193780));
+        intPrinter.accept(-(1617038306 + 1_000_000 + 62193780) - 1);
+        intPrinter.accept(Integer.MIN_VALUE);
+        intPrinter.accept(Integer.MAX_VALUE);
+    }
 
+    @Test
+    void printSomeLongs() {
+        final AlphaNumericCodec codec = new AlphaNumericCodec();
+        final Consumer<String> stringPrinter = s -> {
+            System.out.println(("                    " + s).substring(s.length()) + " --> " + codec.toLong(s));
+            count++;
+        };
+        final LongConsumer longPrinter = i -> {
+            System.out.println(("                    " + i).substring(("" + i).length()) + " --> " + codec.toString(i));
+            count++;
+        };
 
-        System.out.println(codec.toString(AlphaNumericIntCodec.MIN_NUMERIC));
-        System.out.println(codec.toString(AlphaNumericIntCodec.MAX_NUMERIC));
-        System.out.println(codec.toString(AlphaNumericIntCodec.MIN_NUMERIC - 1));
-        System.out.println(codec.toString(AlphaNumericIntCodec.MAX_NUMERIC + 1));
-        System.out.println(codec.toString(1617038306 + 1_000_000 - 1));
-        System.out.println(codec.toString(1617038306 + 1_000_000));
-        System.out.println(codec.toString(1617038306 + 1_000_000 + 1));
-        System.out.println(codec.toString(1617038306 + 1_000_000 + 62193780 - 1));
-        System.out.println(codec.toString(1617038306 + 1_000_000 + 62193780));
-        System.out.println(codec.toString(1617038306 + 1_000_000 + 62193780 + 1));
-        System.out.println(codec.toString(-(1617038306 + 1_000_000) + 1));
-        System.out.println(codec.toString(-(1617038306 + 1_000_000)));
-        System.out.println(codec.toString(-(1617038306 + 1_000_000) - 1));
-        System.out.println(codec.toString(-(1617038306 + 1_000_000 + 62193780) + 1));
-        System.out.println(codec.toString(-(1617038306 + 1_000_000 + 62193780)));
-        System.out.println(codec.toString(-(1617038306 + 1_000_000 + 62193780) - 1));
-        System.out.println(codec.toString(Integer.MIN_VALUE));
-        System.out.println(codec.toString(Integer.MAX_VALUE));
+        stringPrinter.accept("00");
+        stringPrinter.accept("09");
+        stringPrinter.accept("0A");
+        stringPrinter.accept("0Z");
+        stringPrinter.accept("000");
+        stringPrinter.accept("0ZZ");
+        stringPrinter.accept("0000");
+        stringPrinter.accept("0ZZZ");
+        stringPrinter.accept("00000");
+        stringPrinter.accept("0ZZZZ");
+        stringPrinter.accept("000000");
+        stringPrinter.accept("00000A");
+        stringPrinter.accept("00000Z");
+        stringPrinter.accept("0ZZZZZ");
+        stringPrinter.accept("0000000");
+        stringPrinter.accept("0ZZZZZZ");
+        stringPrinter.accept("00000000");
+        stringPrinter.accept("0ZZZZZZZ");
+        stringPrinter.accept("000000000");
+        stringPrinter.accept("0ZZZZZZZZ");
+        stringPrinter.accept("0000000000");
+        stringPrinter.accept("0ZZZZZZZZZ");
+        stringPrinter.accept("00000000000");
+        stringPrinter.accept("0ZZZZZZZZZZ");
+        stringPrinter.accept("000000000000");
+        stringPrinter.accept("0ZZZZZZZZZZZ");
+        stringPrinter.accept("1A");
+        stringPrinter.accept("1Z");
+        stringPrinter.accept("9Z");
+        stringPrinter.accept("10A");
+        stringPrinter.accept("10Z");
+        stringPrinter.accept("19999999999Z");
+        stringPrinter.accept("10000000000A");
+        stringPrinter.accept("10000000000Z");
+        stringPrinter.accept("10000000001A");
+        stringPrinter.accept("10000000009Z");
+        stringPrinter.accept("99999999999Z");
+        stringPrinter.accept("1A0");
+        stringPrinter.accept("6ZZZZZZZZZZZ");
+        stringPrinter.accept("7A0000000000");
+        stringPrinter.accept("7W0000000000");
+        stringPrinter.accept("7W9999999999");
+        stringPrinter.accept("9ZZZZZZZZZZZ");
+        stringPrinter.accept("AAAAAAAAAAAAA");
+        stringPrinter.accept("ZZZZZZZZZZZAA");
+        stringPrinter.accept("ZZZZZZZZZZZZZ");
+        stringPrinter.accept("AAAAAAAAAAAA0");
+        stringPrinter.accept("ZZZZZZZZZZZZ9");
+        stringPrinter.accept("AAAAAAAAAAA00");
+        stringPrinter.accept("RZRYMFXOEDX77");
+        stringPrinter.accept(AlphaNumericLongCodec.MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12);
+        stringPrinter.accept(AlphaNumericLongCodec.MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12);
 
-        System.out.println();
-        System.out.println("longs -----------------");
-        System.out.println(codec.toString(AlphaNumericLongCodec.MIN_NUMERIC));
-        System.out.println(codec.toString(AlphaNumericLongCodec.MAX_NUMERIC));
-        System.out.println(codec.toString(AlphaNumericLongCodec.MIN_NUMERIC - 1));
-        System.out.println(codec.toString(AlphaNumericLongCodec.MAX_NUMERIC + 1));
-        System.out.println(codec.toString(Long.MIN_VALUE));
-        System.out.println(codec.toString(Long.MAX_VALUE));
+        longPrinter.accept(AlphaNumericLongCodec.MIN_NUMERIC);
+        longPrinter.accept(AlphaNumericLongCodec.MAX_NUMERIC);
+        longPrinter.accept(AlphaNumericLongCodec.MIN_NUMERIC - 1);
+        longPrinter.accept(AlphaNumericLongCodec.MAX_NUMERIC + 1);
+        longPrinter.accept(3655332746705247317L);
+        longPrinter.accept(3655332746705247317L + 1);
+        longPrinter.accept(3519940422753201122L + 10_000_000_000_000L - 1);
+        longPrinter.accept(3519940422753201122L + 10_000_000_000_000L);
+        longPrinter.accept(3519940422753201122L + 10_000_000_000_000L + 1);
+        longPrinter.accept(3519940422753201122L + 10_000_000_000_000L + 135382324012512372L - 1);
+        longPrinter.accept(3519940422753201122L + 10_000_000_000_000L + 135382324012512372L);
+        longPrinter.accept(3519940422753201122L + 10_000_000_000_000L + 135382324012512372L + 1);
+        longPrinter.accept(-(3519940422753201122L + 10_000_000_000_000L) + 1);
+        longPrinter.accept(-(3519940422753201122L + 10_000_000_000_000L));
+        longPrinter.accept(-(3519940422753201122L + 10_000_000_000_000L) - 1);
+        longPrinter.accept(-(3519940422753201122L + 10_000_000_000_000L + 135382324012512372L) + 1);
+        longPrinter.accept(-(3519940422753201122L + 10_000_000_000_000L + 135382324012512372L));
+        longPrinter.accept(-(3519940422753201122L + 10_000_000_000_000L + 135382324012512372L) - 1);
+        longPrinter.accept(Long.MIN_VALUE);
+        longPrinter.accept(Long.MAX_VALUE);
+    }
+
+    @Test
+    @Disabled //exhaustive test, runs for quite some time (approx. 4-5 min).
+    void allInts() {
+        final ShortStringCodec codec = AlphaNumericCodec.INSTANCE;
+        final StringBuilder builder = new StringBuilder(codec.maxIntLength() + 1);
+        for (int i = 0; i < Integer.MAX_VALUE; i++) {
+            testToFrom(codec, i, builder);
+            testToFrom(codec, -(i+1), builder);
+            count += 2;
+            if (count % 10_000_000 == 0) {
+                System.out.println("Tested: " + count);
+            }
+        }
+        System.out.println("Tested: " + count);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -299,7 +399,9 @@ class ShortStringCodecTest {
         builder.setLength(0);
         codec.toString(source, builder);
         final int from = codec.toInt(builder);
-        assertEquals(source, from, source + " >> " + builder + " >> " + from);
+        if (source != from) {
+            assertEquals(source, from, source + " >> " + builder + " >> " + from);
+        }
     }
 
     @ParameterizedTest(name = "{0}")
@@ -392,16 +494,4 @@ class ShortStringCodecTest {
         return count;
     }
 
-    private static boolean eq(final CharSequence a, final CharSequence b) {
-        final int len;
-        if ((len = a.length()) != b.length()) {
-            return false;
-        }
-        for (int i = 0; i < len; i++) {
-            if (a.charAt(i) != b.charAt(i)) {
-                return false;
-            }
-        }
-        return true;
-    }
 }
