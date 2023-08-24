@@ -30,49 +30,28 @@ package org.tools4j.shortstring;
  * All integers (longs) are valid integer representations.  The string representation of a fully-numeric value is simply
  * the integer's or long's to-string representation.
  * <p><br>
- * For conversion to and from int:
+ * Examples of valid and invalid string representations are:
  * <pre>
  *    (V) valid representations are
- *        - fully-numeric values from 0 to 999999 (w/o 0 prefix -- zero prefixed values are considered alphanumeric)
- *        - alphanumeric strings of length 1-5
- *        - alphanumeric strings of length 6 starting with a letter
- *        - alphanumeric strings of length 6 starting with a digit from 0-6
- *        - alphanumeric strings of length 6 starting with a digit and less or equal to "7XIZYJ"
- *        - all of the above, except zero, with a sign prefix, where
+ *        - fully-numeric values from 0 to 999,999 (int) and 0 to 9,999,999,999,999 (long), without 0 prefix
+ *        - alphanumeric strings of length 1-5 (int) and 1-12 (long)
+ *        - values with a sign prefix, where
  *            '-' is the sign for fully-numeric values
- *            '.' is the sign for all other alphanumeric values
+ *            '.' is the sign for alphanumeric values
  *    (I) invalid representations are for instance
  *        - empty strings
- *        - strings longer than 7 characters
- *        - strings longer than 6 characters and no sign prefix
+ *        - strings longer than 7 characters (int) and 14 characters (long)
+ *        - strings longer than 6 characters (int) and 13 characters (long) if they have no sign prefix
  *        - strings containing non-alphanumeric characters other than the sign prefix
  *        - fully-numeric values with alphanumeric '.' sign prefix
  *        - alphanumeric strings with numeric '-' sign prefix
  *        - zero-prefixed strings with numeric '-' sign prefix
- *    --&gt; for more details see {@link AlphaNumericIntCodec}
+ *
+ *    --&gt; for more details see {@link AlphaNumericIntCodec} and {@link AlphaNumericLongCodec}
  * </pre>
  *
- * <p><br>
- * For conversion to and from long:
- * <pre>
- *    (V) valid character sequences are
- *        - a single zero character
- *        - strings with 1-13 digits with no leading zeros
- *        - all alphanumeric strings of length 1-12 with no leading zeros
- *        - all alphanumeric strings of length 13 up to '9HYLDS'
- *        - all of the above, except zero, with a sign prefix, where
- *            '-' is the sign for fully-numeric values
- *            '.' is the sign for all other alpha-numeric values
- *    (I) invalid character sequences are for instance
- *        - empty strings
- *        - strings longer than 7 characters
- *        - strings longer than 6 characters and no sign prefix
- *        - strings containing non-alphanumeric characters other than the sign prefix
- *        - zero-prefixed strings, except for zero itself
- *        - digit only strings with a alphanumeric '.' sign prefix
- *        - alphanumeric strings with at least one letter and a numeric '-' sign prefix
- *    --&gt; for more details see {@link AlphaNumericIntCodec}
- * </pre>
+ * @see AlphaNumericIntCodec
+ * @see AlphaNumericLongCodec
  */
 public class AlphaNumericCodec implements ShortStringCodec {
     public static final AlphaNumericCodec INSTANCE = new AlphaNumericCodec();

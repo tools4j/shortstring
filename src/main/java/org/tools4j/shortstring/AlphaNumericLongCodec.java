@@ -32,53 +32,91 @@ import static org.tools4j.shortstring.Chars.startsWithSignChar;
 import static org.tools4j.shortstring.StringLengths.stringLength;
 
 /**
- * Alphanumeric codec translating between string and long representation of a value.  This codec supports
- * alphanumeric strings of length 12 (or signed 13).
+ * Alphanumeric codec translating between string and long representation of a value.  This codec supports all
+ * alphanumeric strings of length 12 (or signed 13), and most length 13 (or signed 14) strings with at least 11 leading
+ * letters.
  * <p><br>
- * All integers are valid integer representations.  The string representation of a fully-numeric value is simply the
- * integer's to-string representation.
+ * All longs are valid integer representations.  The string representation of a fully-numeric value is simply the
+ * long's to-string representation.
  * <p><br>
  * Examples of valid and invalid string representations are:
  * <pre>
  *    (V) valid representations are
- *        - a single zero character
- *        - strings with 1-6 digits with no leading zeros
- *        - all alphanumeric strings of length 1-5 with no leading zeros
- *        - all alphanumeric strings of length 1-6 with first char a letter
- *        - all alphanumeric strings of length 1-5 with first char a digit, or 6 chars and value at most '9HYLDS'
+ *        - fully-numeric values from 0 to 9,999,999,999,999 (w/o 0 prefix -- zero prefixed values are considered alphanumeric)
+ *        - alphanumeric strings of length 1-12
+ *        - alphanumeric strings of length 13 with no digits or with a single digit at the end
+ *        - alphanumeric strings of length 13 with the first digit at position 12 and less or equal to "RZRYMFXOEDX77"
  *        - all of the above, except zero, with a sign prefix, where
  *            '-' is the sign for fully-numeric values
- *            '.' is the sign for all other alpha-numeric values
+ *            '.' is the sign for all other alphanumeric values
  *    (I) invalid representations are for instance
  *        - empty strings
- *        - strings longer than 7 characters
- *        - strings longer than 6 characters and no sign prefix
+ *        - strings longer than 14 characters
+ *        - strings longer than 13 characters if they have no sign prefix
  *        - strings containing non-alphanumeric characters other than the sign prefix
- *        - zero-prefixed strings, except for zero itself
- *        - digit only strings with a alphanumeric '.' sign prefix
- *        - alphanumeric strings with at least one letter and a numeric '-' sign prefix
+ *        - fully-numeric values with alphanumeric '.' sign prefix
+ *        - alphanumeric strings with numeric '-' sign prefix
+ *        - zero-prefixed strings with numeric '-' sign prefix
  * </pre>
- * A valid string representation follows one of the following definitions:
+ * A valid string representation matches exactly one of the following definitions:
  * <pre>
- *     (A+) - 1-6 alphanumeric characters, all letters uppercase and no leading zeros
- *          - char  1 : 'A'-'Z', '1'-'9'
- *          - chars 2+: 'A'-'Z', '0'-'9'
- *          - if first char is '9', then length 1-5 or if length 6, then chars[1-6] &lt;= '9HYLDS'
- *     (A-) - 2-7 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase and no leading zeros
- *          - char 1 : '.'
- *          - char 2 : 'A'-'Z", '1'-'9'
- *          - char 3+: 'A'-'Z', '0'-'9'
- *          - at least one char: 'A'-'Z'
- *          - if second char is '9', then length 2-6 or if length 7, then chars[2-7] &lt;= '9HYLDT'
- *     (Z)  - single zero digit character
+ *     (N0) single zero digit character
  *          - char 1: '0'
- *     (N+) - 1-6 digit characters without leading zeros
+ *     (N+) 1-13 digit characters without leading zeros
  *          - char 1 : '1'-'9'
  *          - char 2+: '0'-'9'
- *     (N-) - 2-7 sign-prefixed digit characters: '-' sign followed by 1-6 digits but no leading zeros
+ *     (N-) 2-14 sign-prefixed digit characters: '-' sign followed by 1-13 digits and no leading zeros
  *          - char 1 : '-'
  *          - char 2 : '1'-'9'
  *          - char 3+: '0'-'9'
+ *     (A+) 1-12 alphanumeric characters, all letters uppercase, first character a letter
+ *          - char  1 : 'A'-'Z'
+ *          - chars 2+: '0'-'9', 'A'-'Z'
+ *     (A-) 2-13 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase, first character a letter
+ *          - char 1 : '.'
+ *          - char 2 : 'A'-'Z'
+ *          - char 3+: '0'-'9', 'A'-'Z'
+ *     (Z+) 2-12 alphanumeric characters with '0' prefix, all letters uppercase
+ *          - char 1: '0'
+ *          - chars 2+: '0'-'9', 'A'-'Z'
+ *     (Z-) 3-13 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase
+ *          - char 1 : '.'
+ *          - char 2: '0'
+ *          - char 3+: '0'-'9', 'A'-'Z'
+ *     (D+) 2-12 alphanumeric characters, all letters uppercase, first character non-zero digit and at least one letter
+ *          - char  1 : '1'-'9'
+ *          - char  2+ : '0'-'9', 'A'-'Z' (at least one 'A'-'Z')
+ *     (D-) 3-13 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase, first character non-zero digit and at least one letter
+ *          - char 1 : '.'
+ *          - char 2 : '1'-'9'
+ *          - char 3+: '0'-'9', 'A'-'Z' (at least one 'A'-'Z')
+ *     (L+) 13 alphanumeric characters, all letters uppercase, first 11 characters a letter
+ *          - char  1-11 : 'A'-'Z'
+ *          - char 12-13 : '0'-'9', 'A'-'Z'
+ *          - if character 12 is a digit, then chars[1-13] &lt;= 'RZRYMFXOEDX77'
+ *     (L-) 14 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase, first 11 characters after the sign a letter
+ *          - char 1 : '.'
+ *          - char 2-12 : 'A'-'Z'
+ *          - char 13-14 : '0'-'9', 'A'-'Z'
+ *          - if character 13 is a digit, then chars[1-14] &lt;= '.RZRYMFXOEDX78'
+ * </pre>
+ * The long range is grouped accordingly into the following sections:
+ * <pre>
+ *  +------+----------------------------------------------------------------+-------------------------------------------------------------+---------------------------+
+ *  | Grp  | String range                                                   | Long range                                                  | # of elements             |
+ *  +------+----------------------------------------------------------------+-------------------------------------------------------------+---------------------------+
+ *  | (L+) | "AAAAAAAAAAAAA", ..., "AAAAAAAAAAA00", ..., "RZRYMFXOEDX77"    |   4,873,772,662,273,663,092  -   9,223,372,036,854,775,807  | 4,349,599,374,581,112,716 |
+ *  | (D+) | "1A", "1B", ..., "10A", ..., "1A0", ..., "9ZZZZZZZZZZZ"        |   3,655,332,746,705,247,318  -   4,873,772,662,273,663,091  | 1,218,439,915,568,415,774 |
+ *  | (Z+) | "00", "01", ..., "0A", ..., "007", ..., "0ZZZZZZZZZZZ"         |   3,519,950,422,753,201,122  -   3,655,332,746,705,247,317  |   135,382,323,952,046,196 |
+ *  | (A+) | "A", "B", ..., "A0", "A1", ..., "ZZZZZZZZZZZZ"                 |          10,000,000,000,000  -   3,519,950,422,753,201,121  | 3,519,940,422,753,201,122 |
+ *  | (N+) | "1", "2", ..., "9", "10", ..., "9999999999999"                 |                           1  -           9,999,999,999,999  |         9,999,999,999,999 |
+ *  | (N0) | "0"                                                            |                                                          0  |                         1 |
+ *  | (N-) | "-1", "-2", ..., "-9", "-10", ..., "-9999999999999"            |                         (-1) -         (-9,999,999,999,999) |         9,999,999,999,999 |
+ *  | (A-) | ".A", ".B", ..., ".A0", ".A1", ..., ".ZZZZZZZZZZZZ"            |        (-10,000,000,000,000) - (-3,519,950,422,753,201,121) | 3,519,940,422,753,201,122 |
+ *  | (Z-) | ".00", ".01", ..., ".0A", ..., ".007", ..., ".0ZZZZZZZZZZZ"    | (-3,519,950,422,753,201,122) - (-3,655,332,746,705,247,317) |   135,382,323,952,046,196 |
+ *  | (D-) | ".1A", ".1B", ..., ".10A", ..., ".1A0", ..., ".9ZZZZZZZZZZZ"   | (-3,655,332,746,705,247,318) - (-4,873,772,662,273,663,091) | 1,218,439,915,568,415,774 |
+ *  | (L-) | ".AAAAAAAAAAAAA", ..., ".AAAAAAAAAAA00", ..., ".RZRYMFXOEDX78" | (-4,873,772,662,273,663,092) - (-9,223,372,036,854,775,808) | 4,349,599,374,581,112,717 |
+ *  +------+----------------------------------------------------------------+-------------------------------------------------------------+---------------------------+
  * </pre>
  */
 public enum AlphaNumericLongCodec {
@@ -183,7 +221,7 @@ public enum AlphaNumericLongCodec {
      *    (2) [A-Z]...[A-Z][0-9][0-9A-Z] = 26^11 * 10 * 36 = 1,321,324,015,315,599,360
      *                                               Total = 4,756,766,455,136,157,696
      * </pre>
-     * However, we have only 4,349,599,374,581,112,715 values left, hence we support
+     * However, we have only 4,349,599,374,581,112,716 values left, hence we support
      * <pre>
      * - 0% of values of length 13 with a digit before position 12
      * - 69.2% of values of length 13 with a digit at position 12

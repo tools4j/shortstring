@@ -40,7 +40,7 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  * Examples of valid and invalid string representations are:
  * <pre>
  *    (V) valid representations are
- *        - fully-numeric values from 0 to 999999 (w/o 0 prefix -- zero prefixed values are considered alphanumeric)
+ *        - fully-numeric values from 0 to 999,999 (w/o 0 prefix -- zero prefixed values are considered alphanumeric)
  *        - alphanumeric strings of length 1-5
  *        - alphanumeric strings of length 6 starting with a letter
  *        - alphanumeric strings of length 6 starting with a digit from 0-6
@@ -57,7 +57,7 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  *        - alphanumeric strings with numeric '-' sign prefix
  *        - zero-prefixed strings with numeric '-' sign prefix
  * </pre>
- * A valid string representation match exactly one of the following definitions:
+ * A valid string representation matches exactly one of the following definitions:
  * <pre>
  *     (N0) single zero digit character
  *          - char 1: '0'
@@ -78,7 +78,7 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  *     (Z+) 2-6 alphanumeric characters with '0' prefix, all letters uppercase
  *          - char 1: '0'
  *          - chars 2+: '0'-'9', 'A'-'Z'
- *     (Z-) - 3-7 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase
+ *     (Z-) 3-7 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase
  *          - char 1 : '.'
  *          - char 2: '0'
  *          - char 3+: '0'-'9', 'A'-'Z'
@@ -86,7 +86,7 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  *          - char  1 : '1'-'9'
  *          - char  2+ : '0'-'9', 'A'-'Z' (at least one 'A'-'Z')
  *          - if first char is more than '7'-'9', then length 1-5 or otherwise chars[1-6] &lt;= '7XIZYJ'
- *     (D-) - 3-7 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase, first character non-zero digit and at least one letter
+ *     (D-) 3-7 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase, first character non-zero digit and at least one letter
  *          - char 1 : '.'
  *          - char 2 : '1'-'9'
  *          - char 3+: '0'-'9', 'A'-'Z' (at least one 'A'-'Z')
@@ -107,7 +107,6 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  *  | (Z-) | ".00", ".01", ..., ".0A", ..., ".007", ..., ".0ZZZZZ"  | (-1,618,038,306) - (-1,680,232,085) |    62,193,780 |
  *  | (D-) | ".1A", ".1B", ..., ".10A", ..., ".1A0", ..., ".7XIZYK" | (-1,680,232,086) - (-2,147,483,648) |   467,251,563 |
  *  +------+--------------------------------------------------------+-------------------------------------+---------------+
- *
  * </pre>
  */
 public enum AlphaNumericIntCodec {
