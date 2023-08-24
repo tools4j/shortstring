@@ -23,12 +23,20 @@
  */
 package org.tools4j.shortstring;
 
+import static org.tools4j.shortstring.Chars.fromAlphanumeric;
+import static org.tools4j.shortstring.Chars.fromDigit;
+import static org.tools4j.shortstring.Chars.fromLetter;
 import static org.tools4j.shortstring.Chars.indexOfFirstDigit;
 import static org.tools4j.shortstring.Chars.indexOfFirstLetter;
 import static org.tools4j.shortstring.Chars.isAlphanumeric;
 import static org.tools4j.shortstring.Chars.leq;
 import static org.tools4j.shortstring.Chars.setChar;
 import static org.tools4j.shortstring.Chars.startsWithSignChar;
+import static org.tools4j.shortstring.Chars.toAlphanumeric;
+import static org.tools4j.shortstring.Chars.toAlphanumeric0;
+import static org.tools4j.shortstring.Chars.toDigit;
+import static org.tools4j.shortstring.Chars.toLetter;
+import static org.tools4j.shortstring.Chars.toLetter0;
 import static org.tools4j.shortstring.StringLengths.stringLength;
 
 /**
@@ -240,7 +248,7 @@ public enum AlphaNumericLongCodec {
 
     public static long toLong(final CharSequence value) {
         final int len = value.length();
-        final int off = Chars.startsWithSignChar(value) ? 1 : 0;
+        final int off = startsWithSignChar(value) ? 1 : 0;
         if (len <= off) {
             throw new IllegalArgumentException(len == 0 ? "Empty value string" : "Invalid sign-only string: " + value);
         }
@@ -491,51 +499,4 @@ public enum AlphaNumericLongCodec {
                 leq(value, MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12);
     }
 
-    private static char toLetter0(final long value) {
-        assert 0 <= value && value < 26;
-        return (char)(value + 'A');
-    }
-
-    private static char toAlphanumeric0(final long value) {
-        assert 0 <= value && value < 36;
-        return (char)(value + (value < 10 ? '0' : 'A' - 10));
-    }
-    private static char toLetter(final long value) {
-        final long code = value % 26;
-        return (char)(code + 'A');
-    }
-
-    private static char toAlphanumeric(final long value) {
-        final long code = value % 36;
-        return (char)(code + (code < 10 ? '0' : 'A' - 10));
-    }
-
-    private static char toDigit(final long value) {
-        final long code = value % 10;
-        return (char)(code + '0');
-    }
-
-    private static int fromLetter(final char ch, final CharSequence seq) {
-        if ('A' <= ch && ch <= 'Z') {
-            return ch - 'A';
-        }
-        throw new IllegalArgumentException("Illegal letter character '" + ch + "' in value string: " + seq);
-    }
-
-    private static int fromDigit(final char ch, final CharSequence seq) {
-        if ('0' <= ch && ch <= '9') {
-            return ch - '0';
-        }
-        throw new IllegalArgumentException("Illegal digit character '" + ch + "' in value string: " + seq);
-    }
-
-    private static int fromAlphanumeric(final char ch, final CharSequence seq) {
-        if ('0' <= ch && ch <= '9') {
-            return ch - '0';
-        }
-        if ('A' <= ch && ch <= 'Z') {
-            return 10 + ch - 'A';
-        }
-        throw new IllegalArgumentException("Illegal character '" + ch + "' in value string: " + seq);
-    }
 }

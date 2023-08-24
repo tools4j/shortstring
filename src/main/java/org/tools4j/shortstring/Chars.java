@@ -150,4 +150,78 @@ enum Chars {
     static boolean startsWithSignChar(final CharSequence seq) {
         return seq.length() > 0 && isSignChar(seq.charAt(0));
     }
+
+    static char toLetter0(final int value) {
+        assert 0 <= value && value < 26;
+        return (char)(value + 'A');
+    }
+
+    static char toLetter0(final long value) {
+        assert 0 <= value && value < 26;
+        return (char)(value + 'A');
+    }
+    static char toLetter(final int value) {
+        final int code = value % 26;
+        return (char)(code + 'A');
+    }
+
+    static char toLetter(final long value) {
+        final long code = value % 26;
+        return (char)(code + 'A');
+    }
+
+    static char toAlphanumeric0(final int value) {
+        assert 0 <= value && value < 36;
+        return (char)(value + (value < 10 ? '0' : 'A' - 10));
+    }
+
+    static char toAlphanumeric0(final long value) {
+        assert 0 <= value && value < 36;
+        return (char)(value + (value < 10 ? '0' : 'A' - 10));
+    }
+
+    static char toAlphanumeric(final int value) {
+        final int code = value % 36;
+        return (char)(code + (code < 10 ? '0' : 'A' - 10));
+    }
+
+    static char toAlphanumeric(final long value) {
+        final long code = value % 36;
+        return (char)(code + (code < 10 ? '0' : 'A' - 10));
+    }
+
+    static char toDigit(final int value) {
+        final int code = value % 10;
+        return (char)(code + '0');
+    }
+
+    static char toDigit(final long value) {
+        final long code = value % 10;
+        return (char)(code + '0');
+    }
+
+    static int fromLetter(final char ch, final CharSequence seq) {
+        if ('A' <= ch && ch <= 'Z') {
+            return ch - 'A';
+        }
+        throw new IllegalArgumentException("Illegal letter character '" + ch + "' in value string: " + seq);
+    }
+
+    static int fromAlphanumeric(final char ch, final CharSequence seq) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        if ('A' <= ch && ch <= 'Z') {
+            return 10 + ch - 'A';
+        }
+        throw new IllegalArgumentException("Illegal character '" + ch + "' in value string: " + seq);
+    }
+
+    static int fromDigit(final char ch, final CharSequence seq) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        throw new IllegalArgumentException("Illegal digit character '" + ch + "' in value string: " + seq);
+    }
+
 }
