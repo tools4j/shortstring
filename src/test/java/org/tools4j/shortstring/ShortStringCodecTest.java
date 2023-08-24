@@ -246,19 +246,25 @@ class ShortStringCodecTest {
     }
 
     @Test
-    @Disabled //exhaustive test, runs for quite some time (approx. 4-5 min).
+    @Disabled//exhaustive test, runs for quite some time (approx. 4-5 min, ~60ns per double-conversion).
     void allInts() {
+        final long printInterval = 10_000_000;
         final ShortStringCodec codec = AlphaNumericCodec.INSTANCE;
         final StringBuilder builder = new StringBuilder(codec.maxIntLength() + 1);
-        for (int i = 0; i < Integer.MAX_VALUE; i++) {
+        long printAt = printInterval;
+        final long ts = System.nanoTime();
+        //noinspection OverflowingLoopIndex
+        for (int i = 0; i >= 0; i++) {
             testToFrom(codec, i, builder);
             testToFrom(codec, -(i+1), builder);
             count += 2;
-            if (count % 10_000_000 == 0) {
+            if (count >= printAt) {
                 System.out.println("Tested: " + count);
+                printAt += printInterval;
             }
         }
-        System.out.println("Tested: " + count);
+        final long te = System.nanoTime();
+        System.out.println("Tested: " + count + ", " + (float)((te-ts) / (0.0 + count)) + "ns/double-conversion");
     }
 
     @ParameterizedTest(name = "{0}")
