@@ -9,7 +9,6 @@ The tools4j shortstring library allows for efficient conversion of short enough 
 
 #### Maven
 ```xml
-_coming shortly_
 <dependency>
         <groupId>org.tools4j</groupId>
         <artifactId>shortstring</artifactId>
@@ -18,12 +17,10 @@ _coming shortly_
 ```
 
 #### Gradle
-_coming shortly_
 ```
 api "org.tools4j:shortstring:1.0'
 ```
 
 ### Download
-_coming shortly_
 You can download binaries, sources and javadoc from maven central:
 * [shortstring download](https://search.maven.org/search?q=a:shortstring-*)
