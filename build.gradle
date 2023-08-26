@@ -197,7 +197,7 @@ java {
 
 publishing {
     publications {
-        elaraCore(MavenPublication) {
+        shortstring(MavenPublication) {
             from components.java
             pom(projectPom)
         }
@@ -215,7 +215,7 @@ publishing {
 }
 
 signing {
-    sign publishing.publications.elaraCore
+    sign publishing.publications.shortstring
 }
 
 tasks.register('testReport', TestReport) {
