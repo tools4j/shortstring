@@ -40,23 +40,31 @@ public class QuickIntroTest {
         int hello = codec.toInt("HELLO");
         int world = codec.toInt("WORLD");
         int agent = codec.toInt("007");
+        int plane = codec.toInt("A380");
+        int form = codec.toInt("1040ES");
         long computational = codec.toLong("COMPUTATIONAL");
 
+        assertEquals("0", codec.toString(zero));
         assertEquals("123456", codec.toString(positive));
+        assertEquals("-987654", codec.toString(negative));
         assertEquals("HELLO", codec.toString(hello));
         assertEquals("WORLD", codec.toString(world));
         assertEquals("007", codec.toString(agent));
+        assertEquals("A380", codec.toString(plane));
+        assertEquals("1040ES", codec.toString(form));
         assertEquals("COMPUTATIONAL", codec.toString(computational));
 
-        //for numeric values also
+        //for numeric values we have also
         assertEquals("0", String.valueOf(zero));
         assertEquals("123456", String.valueOf(positive));
         assertEquals("-987654", String.valueOf(negative));
 
-        //negatives for string values
+        //negatives for non-numeric values
         assertEquals(".HELLO", codec.toString(-hello));
         assertEquals(".WORLD", codec.toString(-world));
         assertEquals(".007", codec.toString(-agent));
+        assertEquals(".A380", codec.toString(-plane));
+        assertEquals(".1040ES", codec.toString(-form));
         assertEquals(".COMPUTATIONAL", codec.toString(-computational));
     }
 
