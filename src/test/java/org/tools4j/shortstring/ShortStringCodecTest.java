@@ -72,7 +72,7 @@ class ShortStringCodecTest {
     static Stream<Arguments> sourceCodecs() {
         return Stream.of(
 //                Arguments.of(new AlphaPrefixCodec(), AlphaPrefixCodec.MIN_NUMERIC, AlphaPrefixCodec.MAX_NUMERIC),
-                Arguments.of(new AlphaNumericCodec(), Chars.AlphaNumeric, AlphaNumericIntCodec.MIN_NUMERIC, AlphaNumericIntCodec.MAX_NUMERIC),
+                Arguments.of(new AlphanumericCodec(), Chars.AlphaNumeric, AlphanumericIntCodec.MIN_NUMERIC, AlphanumericIntCodec.MAX_NUMERIC),
                 Arguments.of(new NumericCodec(), Chars.Numeric, Integer.MIN_VALUE, Integer.MAX_VALUE),
                 Arguments.of(new HexCodec(), Chars.Hex, Integer.MIN_VALUE, Integer.MAX_VALUE)
         );
@@ -88,7 +88,7 @@ class ShortStringCodecTest {
 
     @Test
     void printSomeInts() {
-        final AlphaNumericCodec codec = new AlphaNumericCodec();
+        final AlphanumericCodec codec = new AlphanumericCodec();
         final Consumer<String> stringPrinter = s -> {
             System.out.println(("       " + s).substring(s.length()) + " --> " + codec.toInt(s));
             count++;
@@ -138,10 +138,10 @@ class ShortStringCodecTest {
         stringPrinter.accept(".7XIZYJ");
         stringPrinter.accept(".7XIZYK");
 
-        intPrinter.accept(AlphaNumericIntCodec.MIN_NUMERIC);
-        intPrinter.accept(AlphaNumericIntCodec.MAX_NUMERIC);
-        intPrinter.accept(AlphaNumericIntCodec.MIN_NUMERIC - 1);
-        intPrinter.accept(AlphaNumericIntCodec.MAX_NUMERIC + 1);
+        intPrinter.accept(AlphanumericIntCodec.MIN_NUMERIC);
+        intPrinter.accept(AlphanumericIntCodec.MAX_NUMERIC);
+        intPrinter.accept(AlphanumericIntCodec.MIN_NUMERIC - 1);
+        intPrinter.accept(AlphanumericIntCodec.MAX_NUMERIC + 1);
         intPrinter.accept(1617038306 + 1_000_000 - 1);
         intPrinter.accept(1617038306 + 1_000_000);
         intPrinter.accept(1617038306 + 1_000_000 + 1);
@@ -160,7 +160,7 @@ class ShortStringCodecTest {
 
     @Test
     void printSomeLongs() {
-        final AlphaNumericCodec codec = new AlphaNumericCodec();
+        final AlphanumericCodec codec = new AlphanumericCodec();
         final Consumer<String> stringPrinter = s -> {
             System.out.println(("                    " + s).substring(s.length()) + " --> " + codec.toLong(s));
             count++;
@@ -220,13 +220,13 @@ class ShortStringCodecTest {
         stringPrinter.accept("ZZZZZZZZZZZZ9");
         stringPrinter.accept("AAAAAAAAAAA00");
         stringPrinter.accept("RZRYMFXOEDX77");
-        stringPrinter.accept(AlphaNumericLongCodec.MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12);
-        stringPrinter.accept(AlphaNumericLongCodec.MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12);
+        stringPrinter.accept(AlphanumericLongCodec.MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12);
+        stringPrinter.accept(AlphanumericLongCodec.MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12);
 
-        longPrinter.accept(AlphaNumericLongCodec.MIN_NUMERIC);
-        longPrinter.accept(AlphaNumericLongCodec.MAX_NUMERIC);
-        longPrinter.accept(AlphaNumericLongCodec.MIN_NUMERIC - 1);
-        longPrinter.accept(AlphaNumericLongCodec.MAX_NUMERIC + 1);
+        longPrinter.accept(AlphanumericLongCodec.MIN_NUMERIC);
+        longPrinter.accept(AlphanumericLongCodec.MAX_NUMERIC);
+        longPrinter.accept(AlphanumericLongCodec.MIN_NUMERIC - 1);
+        longPrinter.accept(AlphanumericLongCodec.MAX_NUMERIC + 1);
         longPrinter.accept(3655332746705247317L);
         longPrinter.accept(3655332746705247317L + 1);
         longPrinter.accept(3519940422753201122L + 10_000_000_000_000L - 1);
@@ -249,7 +249,7 @@ class ShortStringCodecTest {
     @Disabled//exhaustive test, runs for quite some time (approx. 4-5 min, ~60ns per double-conversion).
     void allInts() {
         final long printInterval = 10_000_000;
-        final ShortStringCodec codec = AlphaNumericCodec.INSTANCE;
+        final ShortStringCodec codec = ShortString.ALPHANUMERIC;
         final StringBuilder builder = new StringBuilder(codec.maxIntLength() + 1);
         long printAt = printInterval;
         final long ts = System.nanoTime();
@@ -274,9 +274,9 @@ class ShortStringCodecTest {
         final String max;
         final IntUnaryOperator next;
         final IntUnaryOperator prev;
-        if (codec instanceof AlphaNumericCodec) {
-            min = AlphaNumericIntCodec.MIN_DIGIT_PREFIXED_ALPHANUMERIC;
-            max = AlphaNumericIntCodec.MAX_DIGIT_PREFIXED_ALPHANUMERIC;
+        if (codec instanceof AlphanumericCodec) {
+            min = AlphanumericIntCodec.MIN_DIGIT_PREFIXED_ALPHANUMERIC;
+            max = AlphanumericIntCodec.MAX_DIGIT_PREFIXED_ALPHANUMERIC;
             next = ch -> ch == '9' ? 'A' : ch == 'Z' ? '0' : ch + 1;
             prev = ch -> ch == '0' ? 'Z' : ch == 'A' ? '9' : ch - 1;
         } else if (codec instanceof NumericCodec) {

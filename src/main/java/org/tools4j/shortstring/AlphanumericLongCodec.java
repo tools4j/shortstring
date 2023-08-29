@@ -101,12 +101,12 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  *     (L+) 13 alphanumeric characters, all letters uppercase, first 11 characters a letter
  *          - char  1-11 : 'A'-'Z'
  *          - char 12-13 : '0'-'9', 'A'-'Z'
- *          - if character 12 is a digit, then chars[1-13] &lt;= 'RZRYMFXOEDX77'
+ *          - if character 12 is a digit, then value &lt;= 'RZRYMFXOEDX77'
  *     (L-) 14 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase, first 11 characters after the sign a letter
  *          - char 1 : '.'
  *          - char 2-12 : 'A'-'Z'
  *          - char 13-14 : '0'-'9', 'A'-'Z'
- *          - if character 13 is a digit, then chars[1-14] &lt;= '.RZRYMFXOEDX78'
+ *          - if character 13 is a digit, then value &lt;= '.RZRYMFXOEDX78'
  * </pre>
  * The long range is grouped accordingly into the following sections:
  * <pre>
@@ -127,7 +127,7 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  *  +------+----------------------------------------------------------------+-------------------------------------------------------------+---------------------------+
  * </pre>
  */
-public enum AlphaNumericLongCodec {
+public enum AlphanumericLongCodec {
     ;
     public static final int MAX_LENGTH_UNSIGNED = 13;
     public static final int MAX_LENGTH_SIGNED = 14;

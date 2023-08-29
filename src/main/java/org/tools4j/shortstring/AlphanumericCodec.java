@@ -47,53 +47,51 @@ package org.tools4j.shortstring;
  *        - alphanumeric strings with numeric '-' sign prefix
  *        - zero-prefixed strings with numeric '-' sign prefix
  *
- *    --&gt; for more details see {@link AlphaNumericIntCodec} and {@link AlphaNumericLongCodec}
+ *    --&gt; for more details see {@link AlphanumericIntCodec} and {@link AlphanumericLongCodec}
  * </pre>
  *
- * @see AlphaNumericIntCodec
- * @see AlphaNumericLongCodec
+ * @see AlphanumericIntCodec
+ * @see AlphanumericLongCodec
  */
-public class AlphaNumericCodec implements ShortStringCodec {
-    public static final AlphaNumericCodec INSTANCE = new AlphaNumericCodec();
-
+public class AlphanumericCodec implements ShortStringCodec {
     @Override
     public int maxIntLength() {
-        return AlphaNumericIntCodec.MAX_LENGTH_UNSIGNED;
+        return AlphanumericIntCodec.MAX_LENGTH_UNSIGNED;
     }
 
     @Override
     public int maxLongLength() {
-        return AlphaNumericLongCodec.MAX_LENGTH_UNSIGNED;
+        return AlphanumericLongCodec.MAX_LENGTH_UNSIGNED;
     }
 
     @Override
     public int toInt(final CharSequence value) {
-        return AlphaNumericIntCodec.toInt(value);
+        return AlphanumericIntCodec.toInt(value);
     }
 
     @Override
     public long toLong(final CharSequence value) {
-        return AlphaNumericLongCodec.toLong(value);
+        return AlphanumericLongCodec.toLong(value);
     }
 
     @Override
     public StringBuilder toString(final int value, final StringBuilder dst) {
-        return AlphaNumericIntCodec.toString(value, dst);
+        return AlphanumericIntCodec.toString(value, dst);
     }
 
     @Override
     public StringBuilder toString(final long value, final StringBuilder dst) {
-        return AlphaNumericLongCodec.toString(value, dst);
+        return AlphanumericLongCodec.toString(value, dst);
     }
 
     @Override
     public boolean isConvertibleToInt(final CharSequence value) {
-        return AlphaNumericIntCodec.isConvertibleToInt(value);
+        return AlphanumericIntCodec.isConvertibleToInt(value);
     }
 
     @Override
     public boolean isConvertibleToLong(final CharSequence value) {
-        return AlphaNumericLongCodec.isConvertibleToLong(value);
+        return AlphanumericLongCodec.isConvertibleToLong(value);
     }
 
     @Override
@@ -103,6 +101,6 @@ public class AlphaNumericCodec implements ShortStringCodec {
 
     @Override
     public String toString() {
-        return AlphaNumericCodec.class.getSimpleName();
+        return AlphanumericCodec.class.getSimpleName();
     }
 }

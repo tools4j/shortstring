@@ -30,9 +30,6 @@ package org.tools4j.shortstring;
  * @see Long#toHexString(long)
  */
 public class HexCodec implements ShortStringCodec {
-
-    public static final HexCodec INSTANCE = new HexCodec();
-
     public static final String MAX_INT_STRING = "7FFFFFFF";
     public static final String MIN_INT_STRING = "-80000000";
     public static final String MAX_LONG_STRING = "7FFFFFFFFFFFFFFF";

@@ -93,12 +93,12 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  *     (D+) 2-6 alphanumeric characters, all letters uppercase, first character non-zero digit and at least one letter
  *          - char  1 : '1'-'9'
  *          - char  2+ : '0'-'9', 'A'-'Z' (at least one 'A'-'Z')
- *          - if first char is more than '7'-'9', then length 1-5 or otherwise chars[1-6] &lt;= '7XIZYJ'
+ *          - if first char is more than '7'-'9', then length 1-5 or otherwise value &lt;= '7XIZYJ'
  *     (D-) 3-7 sign-prefixed alphanumeric characters, '.' as sign prefix, all letters uppercase, first character non-zero digit and at least one letter
  *          - char 1 : '.'
  *          - char 2 : '1'-'9'
  *          - char 3+: '0'-'9', 'A'-'Z' (at least one 'A'-'Z')
- *          - if second char is '7'-'9', then length 1-5 or otherwise chars[1-6] &lt;= '7XIZYJ'
+ *          - if second char is '7'-'9', then length 2-6 or otherwise value &lt;= '.7XIZYK'
  * </pre>
  * The integer range is grouped accordingly into the following sections:
  * <pre>
@@ -117,7 +117,7 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  *  +------+--------------------------------------------------------+-------------------------------------+---------------+
  * </pre>
  */
-public enum AlphaNumericIntCodec {
+public enum AlphanumericIntCodec {
     ;
     public static final int MAX_LENGTH_UNSIGNED = 6;
     public static final int MAX_LENGTH_SIGNED = 7;
