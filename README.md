@@ -80,13 +80,13 @@ This [code example](https://github.com/tools4j/shortstring/tree/master/src/test/
 <dependency>
     <groupId>org.tools4j</groupId>
     <artifactId>shortstring</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 </dependency>
 ```
 
 #### Gradle
 ```
-api "org.tools4j:shortstring:1.0'
+api "org.tools4j:shortstring:1.1'
 ```
 
 ### Download
