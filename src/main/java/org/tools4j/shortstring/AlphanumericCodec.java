@@ -85,6 +85,15 @@ public class AlphanumericCodec implements ShortStringCodec {
     }
 
     @Override
+    public int toString(final int value, final Appendable appendable) {
+        return AlphanumericIntCodec.toString(value, appendable);
+    }
+
+    @Override
+    public int toString(final long value, final Appendable appendable) {
+        return AlphanumericLongCodec.toString(value, appendable);
+    }
+    @Override
     public boolean isConvertibleToInt(final CharSequence value) {
         return AlphanumericIntCodec.isConvertibleToInt(value);
     }

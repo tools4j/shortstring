@@ -23,6 +23,8 @@
  */
 package org.tools4j.shortstring;
 
+import java.io.IOException;
+
 enum Chars {
     ;
     static void setChar(final char ch, final StringBuilder dst, final int dstIndex) {
@@ -224,4 +226,87 @@ enum Chars {
         throw new IllegalArgumentException("Illegal digit character '" + ch + "' in value string: " + seq);
     }
 
+    static long charToSeq(final long seq, final int index, final char ch) {
+        return seq | ((ch & 0xffL) << (index << 3));
+    }
+
+    static long charToBiSeq1(final long seq1, final int index, final char ch) {
+        return index < 8 ? charToSeq(seq1, index, ch) : seq1;
+    }
+
+    static long charToBiSeq2(final long seq2, final int index, final char ch) {
+        return index < 8 ? seq2 : charToSeq(seq2, index - Long.BYTES, ch);
+    }
+
+    static char charFromSeq(final long seq, final int index) {
+        return (char)((seq >>> (index << 3)) & 0xffL);
+    }
+
+    static StringBuilder appendSeq(final long seq, final StringBuilder dst) {
+        for (int i = 0; i < Long.BYTES; i++) {
+            final char ch = charFromSeq(seq, i);
+            if (ch == '\0') {
+                return dst;
+            }
+            dst.append(ch);
+        }
+        return dst;
+    }
+    static int appendSeq(final long seq, final Appendable appendable) {
+        for (int i = 0; i < Long.BYTES; i++) {
+            final char ch = charFromSeq(seq, i);
+            if (ch == '\0') {
+                return i;
+            }
+            append(appendable, ch);
+        }
+        return Long.BYTES;
+    }
+    static int appendBiSeq(final long seq1, final long seq2, final StringBuilder dst) {
+        for (int i = 0; i < Long.BYTES; i++) {
+            final char ch = charFromSeq(seq1, i);
+            if (ch == '\0') {
+                return i;
+            }
+            dst.append(ch);
+        }
+        for (int i = 0; i < Long.BYTES; i++) {
+            final char ch = charFromSeq(seq2, i - Long.BYTES);
+            if (ch == '\0') {
+                return i + Long.BYTES;
+            }
+            dst.append(ch);
+        }
+        return Long.BYTES + Long.BYTES;
+    }
+    static int appendBiSeq(final long seq1, final long seq2, final Appendable appendable) {
+        for (int i = 0; i < Long.BYTES; i++) {
+            final char ch = charFromSeq(seq1, i);
+            if (ch == '\0') {
+                return i;
+            }
+            append(appendable, ch);
+        }
+        for (int i = 0; i < Long.BYTES; i++) {
+            final char ch = charFromSeq(seq2, i - Long.BYTES);
+            if (ch == '\0') {
+                return i + Long.BYTES;
+            }
+            append(appendable, ch);
+        }
+        return Long.BYTES + Long.BYTES;
+    }
+
+    private static void append(final Appendable appendable, final char ch) {
+        try {
+            appendable.append(ch);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @FunctionalInterface
+    interface BiAppender<T> {
+        int append(long seq1, long seq2, T target);
+    }
 }

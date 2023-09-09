@@ -23,6 +23,8 @@
  */
 package org.tools4j.shortstring;
 
+import static org.tools4j.shortstring.Chars.appendSeq;
+import static org.tools4j.shortstring.Chars.charToSeq;
 import static org.tools4j.shortstring.Chars.fromAlphanumeric;
 import static org.tools4j.shortstring.Chars.fromDigit;
 import static org.tools4j.shortstring.Chars.fromLetter;
@@ -30,7 +32,6 @@ import static org.tools4j.shortstring.Chars.indexOfFirstLetter;
 import static org.tools4j.shortstring.Chars.isAlphanumeric;
 import static org.tools4j.shortstring.Chars.isDigit;
 import static org.tools4j.shortstring.Chars.leq;
-import static org.tools4j.shortstring.Chars.setChar;
 import static org.tools4j.shortstring.Chars.startsWithSignChar;
 import static org.tools4j.shortstring.Chars.toAlphanumeric;
 import static org.tools4j.shortstring.Chars.toAlphanumeric0;
@@ -277,19 +278,27 @@ public enum AlphanumericIntCodec {
     }
 
     public static StringBuilder toString(final int value, final StringBuilder dst) {
+        return appendSeq(toSeq(value), dst);
+    }
+
+    public static int toString(final int value, final Appendable appendable) {
+        return appendSeq(toSeq(value), appendable);
+    }
+
+    private static long toSeq(final int value) {
         final char sign;
         int val = Math.abs(value);
-        int off = dst.length();
-        int start = off;
+        int start = 0;
+        long seq = 0;
         if (value > -NUMERIC_BLOCK_LENGTH && value < NUMERIC_BLOCK_LENGTH) {
             sign = '-';
             final int len = stringLength(val);
             for (int i = len - 1; i >= 0; i--) {
                 final char ch = toDigit(val);
-                setChar(ch, dst, off + i);
+                seq = charToSeq(seq, i, ch);
                 val /= 10;
                 if (val == 0) {
-                    start = off + i;
+                    start = i;
                     break;
                 }
             }
@@ -300,13 +309,13 @@ public enum AlphanumericIntCodec {
             for (int i = 5; i >= 0; i--) {
                 if (val < 26) {
                     final char ch = toLetter0(val);
-                    setChar(ch, dst, off + i);
-                    start = off + i;
+                    seq = charToSeq(seq, i, ch);
+                    start = i;
                     break;
                 }
                 val -= 26;
                 final char ch = toAlphanumeric(val);
-                setChar(ch, dst, off + i);
+                seq = charToSeq(seq, i, ch);
                 val /= 36;
             }
         } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_ZERO_PREFIXED_BLOCK_LENGTH) &&
@@ -316,14 +325,14 @@ public enum AlphanumericIntCodec {
             for (int i = 5; i >= 1; i--) {
                 if (val < 36) {
                     final char ch = toAlphanumeric0(val);
-                    setChar(ch, dst, off + i);
-                    setChar('0', dst, off + i - 1);
-                    start = off + i - 1;
+                    seq = charToSeq(seq, i, ch);
+                    seq = charToSeq(seq, i - 1, '0');
+                    start = i - 1;
                     break;
                 }
                 val -= 36;
                 final char ch = toAlphanumeric(val);
-                setChar(ch, dst, off + i);
+                seq = charToSeq(seq, i, ch);
                 val /= 36;
             }
         } else {
@@ -341,34 +350,34 @@ public enum AlphanumericIntCodec {
             assert subBlockIndex >= 0;
             for (int i = 0; i < subBlockIndex; i++) {
                 final char ch = toAlphanumeric(val);
-                setChar(ch, dst, off + 5 - i);
+                seq = charToSeq(seq, 5 - i, ch);
                 val /= 36;
             }
             final char letter = toLetter(val);
-            setChar(letter, dst, off + 5 - subBlockIndex);
+            seq = charToSeq(seq, 5 - subBlockIndex, letter);
             val /= 26;
             for (int i = subBlockIndex + 1; i <= 5; i++) {
                 if (val < 9) {
                     final char ch = (char)(val + '1');
-                    setChar(ch, dst, off + 5 - i);
-                    start = off + 5 - i;
+                    seq = charToSeq(seq, 5 - i, ch);
+                    start = 5 - i;
                     break;
                 }
                 val -= 9;
                 final char ch = toDigit(val);
-                setChar(ch, dst, off + 5 - i);
+                seq = charToSeq(seq, 5 - i, ch);
                 val /= 10;
             }
         }
         if (value < 0) {
-            start--;
-            if (start < off) {
-                dst.insert(off, sign);
-                return dst;
+            if (start > 0) {
+                start--;
+            } else {
+                seq = (seq << 8);
             }
-            dst.setCharAt(start, sign);
+            seq = charToSeq(seq, start, sign);
         }
-        return dst.delete(off, start);
+        return (seq >>> (start << 3));
     }
 
     public static boolean isConvertibleToInt(final CharSequence value) {

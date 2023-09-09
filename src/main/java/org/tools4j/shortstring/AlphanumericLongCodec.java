@@ -23,6 +23,10 @@
  */
 package org.tools4j.shortstring;
 
+import org.tools4j.shortstring.Chars.BiAppender;
+
+import static org.tools4j.shortstring.Chars.charToBiSeq1;
+import static org.tools4j.shortstring.Chars.charToBiSeq2;
 import static org.tools4j.shortstring.Chars.fromAlphanumeric;
 import static org.tools4j.shortstring.Chars.fromDigit;
 import static org.tools4j.shortstring.Chars.fromLetter;
@@ -30,7 +34,6 @@ import static org.tools4j.shortstring.Chars.indexOfFirstDigit;
 import static org.tools4j.shortstring.Chars.indexOfFirstLetter;
 import static org.tools4j.shortstring.Chars.isAlphanumeric;
 import static org.tools4j.shortstring.Chars.leq;
-import static org.tools4j.shortstring.Chars.setChar;
 import static org.tools4j.shortstring.Chars.startsWithSignChar;
 import static org.tools4j.shortstring.Chars.toAlphanumeric;
 import static org.tools4j.shortstring.Chars.toAlphanumeric0;
@@ -346,19 +349,30 @@ public enum AlphanumericLongCodec {
     }
 
     public static StringBuilder toString(final long value, final StringBuilder dst) {
+        toString(value, dst, Chars::appendBiSeq);
+        return dst;
+    }
+
+    public static int toString(final long value, final Appendable appendable) {
+        return toString(value, appendable, Chars::appendBiSeq);
+    }
+
+    private static <T> int toString(final long value, final T target, final BiAppender<? super T> appender) {
         final char sign;
         long val = Math.abs(value);
-        int off = dst.length();
-        int start = off;
+        int start = 0;
+        long seq1 = 0;
+        long seq2 = 0;
         if (value > -NUMERIC_BLOCK_LENGTH && value < NUMERIC_BLOCK_LENGTH) {
             sign = '-';
             final int len = stringLength(val);
             for (int i = len - 1; i >= 0; i--) {
                 final char ch = toDigit(val);
-                setChar(ch, dst, off + i);
+                seq1 = charToBiSeq1(seq1, i, ch);
+                seq2 = charToBiSeq2(seq2, i, ch);
                 val /= 10;
                 if (val == 0) {
-                    start = off + i;
+                    start = i;
                     break;
                 }
             }
@@ -369,13 +383,15 @@ public enum AlphanumericLongCodec {
             for (int i = 11; i >= 0; i--) {
                 if (val < 26) {
                     final char ch = toLetter0(val);
-                    setChar(ch, dst, off + i);
-                    start = off + i;
+                    seq1 = charToBiSeq1(seq1, i, ch);
+                    seq2 = charToBiSeq2(seq2, i, ch);
+                    start = i;
                     break;
                 }
                 val -= 26;
                 final char ch = toAlphanumeric(val);
-                setChar(ch, dst, off + i);
+                seq1 = charToBiSeq1(seq1, i, ch);
+                seq2 = charToBiSeq2(seq2, i, ch);
                 val /= 36;
             }
         } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH) &&
@@ -385,14 +401,17 @@ public enum AlphanumericLongCodec {
             for (int i = 11; i >= 1; i--) {
                 if (val < 36) {
                     final char ch = toAlphanumeric0(val);
-                    setChar(ch, dst, off + i);
-                    setChar('0', dst, off + i - 1);
-                    start = off + i - 1;
+                    seq1 = charToBiSeq1(seq1, i, ch);
+                    seq2 = charToBiSeq2(seq2, i, ch);
+                    seq1 = charToBiSeq1(seq1, i - 1, '0');
+                    seq2 = charToBiSeq2(seq2, i - 1, '0');
+                    start = i - 1;
                     break;
                 }
                 val -= 36;
                 final char ch = toAlphanumeric(val);
-                setChar(ch, dst, off + i);
+                seq1 = charToBiSeq1(seq1, i, ch);
+                seq2 = charToBiSeq2(seq2, i, ch);
                 val /= 36;
             }
         } else if (value > -(NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LE_12_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_ZERO_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_LE_12_DIGIT_PREFIXED_BLOCK_LENGTH) &&
@@ -411,22 +430,26 @@ public enum AlphanumericLongCodec {
             assert subBlockIndex >= 0;
             for (int i = 0; i < subBlockIndex; i++) {
                 final char ch = toAlphanumeric(val);
-                setChar(ch, dst, off + 11 - i);
+                seq1 = charToBiSeq1(seq1, 11 - i, ch);
+                seq2 = charToBiSeq2(seq2, 11 - i, ch);
                 val /= 36;
             }
             final char letter = toLetter(val);
-            setChar(letter, dst, off + 11 - subBlockIndex);
+            seq1 = charToBiSeq1(seq1, 11 - subBlockIndex, letter);
+            seq2 = charToBiSeq2(seq2, 11 - subBlockIndex, letter);
             val /= 26;
             for (int i = subBlockIndex + 1; i <= 11; i++) {
                 if (val < 9) {
                     final char ch = (char)(val + '1');
-                    setChar(ch, dst, off + 11 - i);
-                    start = off + 11 - i;
+                    seq1 = charToBiSeq1(seq1, 11 - i, ch);
+                    seq2 = charToBiSeq2(seq2, 11 - i, ch);
+                    start = 11 - i;
                     break;
                 }
                 val -= 9;
                 final char ch = toDigit(val);
-                setChar(ch, dst, off + 11 - i);
+                seq1 = charToBiSeq1(seq1, 11 - i, ch);
+                seq2 = charToBiSeq2(seq2, 11 - i, ch);
                 val /= 10;
             }
         } else {
@@ -445,30 +468,48 @@ public enum AlphanumericLongCodec {
             char ch;
             if (subBlockIndex > 1) {
                 ch = toAlphanumeric(val);
-                setChar(ch, dst, off + 12);
+                seq1 = charToBiSeq1(seq1, 12, ch);
+                seq2 = charToBiSeq2(seq2, 12, ch);
                 val /= 36;
             }
             if (subBlockIndex > 0) {
                 ch = toDigit(val);
-                setChar(ch, dst, off + 12 - (subBlockIndex - 1));
+                seq1 = charToBiSeq1(seq1, 12 - (subBlockIndex - 1), ch);
+                seq2 = charToBiSeq2(seq2, 12 - (subBlockIndex - 1), ch);
                 val /= 10;
             }
             for (int i = subBlockIndex; i <= 12; i++) {
                 ch = toLetter(val);
-                setChar(ch, dst, off + 12 - i);
+                seq1 = charToBiSeq1(seq1, 12 - i, ch);
+                seq2 = charToBiSeq2(seq2, 12 - i, ch);
                 val /= 26;
             }
             assert val == 0;
         }
         if (value < 0) {
-            start--;
-            if (start < off) {
-                dst.insert(off, sign);
-                return dst;
+            if (start > 0) {
+                start--;
+            } else {
+                //left shift 8
+                seq2 = (seq2 << 8) | (seq1 >>> 56);
+                seq1 = (seq1 << 8);
             }
-            dst.setCharAt(start, sign);
+            seq1 = charToBiSeq1(seq1, start, sign);
+            seq2 = charToBiSeq2(seq2, start, sign);
         }
-        return dst.delete(off, start);
+        if (start > 0) {
+            //right shift by 8*start
+            if (start < 8) {
+                final int shift = (start << 3);
+                seq1 = (seq1 >>> shift) | (seq2 << (64 - shift));
+                seq2 = (seq2 >>> shift);
+            } else {
+                final int shift = ((start - 8) << 3);
+                seq1 = seq2 >>> shift;
+                seq2 = 0;
+            }
+        }
+        return appender.append(seq1, seq2, target);
     }
 
     public static boolean isConvertibleToLong(final CharSequence value) {

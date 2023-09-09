@@ -165,6 +165,15 @@ public class NumericCodec implements ShortStringCodec {
     }
 
     @Override
+    public int toString(final int value, final Appendable appendable) {
+        throw new IllegalArgumentException("not implemented");//FIXME
+    }
+
+    @Override
+    public int toString(final long value, final Appendable appendable) {
+        throw new IllegalArgumentException("not implemented");//FIXME
+    }
+    @Override
     public StringBuilder toString(final int value, final StringBuilder dst) {
         return intToString(value, dst);
     }

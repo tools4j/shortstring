@@ -80,6 +80,24 @@ public interface ShortStringCodec {
     StringBuilder toString(long value, StringBuilder dst);
 
     /**
+     * Converts the provided value to its string representation and appends it to {@code appendable}.
+     * @param value the value to convert
+     * @param appendable the appendable to append to
+     * @return the number of characters that have been appended
+     * @throws NullPointerException if appendable is null
+     */
+    int toString(int value, Appendable appendable);
+
+    /**
+     * Converts the provided value to its string representation and appends it to {@code appendable}.
+     * @param value the value to convert
+     * @param appendable the appendable to append to
+     * @return the number of characters that have been appended
+     * @throws NullPointerException if appendable is null
+     */
+    int toString(long value, Appendable appendable);
+
+    /**
      * Converts the provided value to its string representation and returns it.
      * <p>
      * <b>NOTE: </b> Result and temporary objects are allocated by this method.

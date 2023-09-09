@@ -176,6 +176,16 @@ public class HexCodec implements ShortStringCodec {
         return longToString(value, dst);
     }
 
+    @Override
+    public int toString(final int value, final Appendable appendable) {
+        throw new IllegalArgumentException("not implemented");//FIXME
+    }
+
+    @Override
+    public int toString(final long value, final Appendable appendable) {
+        throw new IllegalArgumentException("not implemented");//FIXME
+    }
+
     public static StringBuilder intToString(final int value, final StringBuilder dst) {
         //see Integer.toHexString(int)
         final int mag = Integer.SIZE - Integer.numberOfLeadingZeros(Math.abs(value));

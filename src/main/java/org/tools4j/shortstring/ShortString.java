@@ -76,6 +76,16 @@ public enum ShortString implements ShortStringCodec {
     }
 
     @Override
+    public int toString(final int value, final Appendable appendable) {
+        return codec.toString(value, appendable);
+    }
+
+    @Override
+    public int toString(final long value, final Appendable appendable) {
+        return codec.toString(value, appendable);
+    }
+
+    @Override
     public final boolean startsWithSignChar(final CharSequence value) {
         return codec.startsWithSignChar(value);
     }
