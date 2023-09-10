@@ -426,7 +426,7 @@ public enum AlphanumericLongCodec {
                 }
                 val -= 9;
                 final char ch = toDigit(val);
-                setChar(ch, dst, off + 10 - i);
+                setChar(ch, dst, off + 11 - i);
                 val /= 10;
             }
         } else {
