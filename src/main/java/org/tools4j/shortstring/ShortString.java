@@ -46,6 +46,11 @@ public enum ShortString implements ShortStringCodec {
     }
 
     @Override
+    public int maxShortLength() {
+        return codec.maxShortLength();
+    }
+
+    @Override
     public final int maxIntLength() {
         return codec.maxIntLength();
     }
@@ -53,6 +58,11 @@ public enum ShortString implements ShortStringCodec {
     @Override
     public final int maxLongLength() {
         return codec.maxLongLength();
+    }
+
+    @Override
+    public short toShort(final CharSequence value) {
+        return codec.toShort(value);
     }
 
     @Override
@@ -66,6 +76,11 @@ public enum ShortString implements ShortStringCodec {
     }
 
     @Override
+    public StringBuilder toString(final short value, final StringBuilder dst) {
+        return codec.toString(value, dst);
+    }
+
+    @Override
     public final StringBuilder toString(final int value, final StringBuilder dst) {
         return codec.toString(value, dst);
     }
@@ -73,6 +88,11 @@ public enum ShortString implements ShortStringCodec {
     @Override
     public final StringBuilder toString(final long value, final StringBuilder dst) {
         return codec.toString(value, dst);
+    }
+
+    @Override
+    public int toString(final short value, final Appendable appendable) {
+        return codec.toString(value, appendable);
     }
 
     @Override
@@ -88,6 +108,11 @@ public enum ShortString implements ShortStringCodec {
     @Override
     public final boolean startsWithSignChar(final CharSequence value) {
         return codec.startsWithSignChar(value);
+    }
+
+    @Override
+    public boolean isConvertibleToShort(final CharSequence value) {
+        return codec.isConvertibleToShort(value);
     }
 
     @Override

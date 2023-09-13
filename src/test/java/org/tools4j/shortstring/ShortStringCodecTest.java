@@ -215,6 +215,15 @@ class ShortStringCodecTest {
         count--;//one test double counted for zero
     }
 
+    static void testToFrom(final ShortStringCodec codec, final short source, final StringBuilder builder) {
+        builder.setLength(0);
+        codec.toString(source, builder);
+        final short from = codec.toShort(builder);
+        if (source != from) {
+            assertEquals(source, from, source + " >> " + builder + " >> " + from);
+        }
+    }
+
     static void testToFrom(final ShortStringCodec codec, final int source, final StringBuilder builder) {
         builder.setLength(0);
         codec.toString(source, builder);

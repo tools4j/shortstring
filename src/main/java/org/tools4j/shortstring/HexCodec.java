@@ -30,10 +30,13 @@ package org.tools4j.shortstring;
  * @see Long#toHexString(long)
  */
 public class HexCodec implements ShortStringCodec {
+    public static final String MAX_SHORT_STRING = "7FFF";
+    public static final String MIN_SHORT_STRING = "-8000";
     public static final String MAX_INT_STRING = "7FFFFFFF";
     public static final String MIN_INT_STRING = "-80000000";
     public static final String MAX_LONG_STRING = "7FFFFFFFFFFFFFFF";
     public static final String MIN_LONG_STRING = "-8000000000000000";
+    public static final int MAX_SHORT_STRING_LENGTH = MAX_SHORT_STRING.length();
     public static final int MAX_INT_STRING_LENGTH = MAX_INT_STRING.length();
     public static final int MAX_LONG_STRING_LENGTH = MAX_LONG_STRING.length();
 
@@ -43,6 +46,11 @@ public class HexCodec implements ShortStringCodec {
     };
 
     @Override
+    public int maxShortLength() {
+        return MAX_SHORT_STRING_LENGTH;
+    }
+
+    @Override
     public int maxIntLength() {
         return MAX_INT_STRING_LENGTH;
     }
@@ -50,6 +58,11 @@ public class HexCodec implements ShortStringCodec {
     @Override
     public int maxLongLength() {
         return MAX_LONG_STRING_LENGTH;
+    }
+
+    @Override
+    public short toShort(final CharSequence value) {
+        throw new IllegalArgumentException("not implemented");//FIXME
     }
 
     @Override
@@ -167,6 +180,11 @@ public class HexCodec implements ShortStringCodec {
     }
 
     @Override
+    public StringBuilder toString(final short value, final StringBuilder dst) {
+        return shortToString(value, dst);
+    }
+
+    @Override
     public StringBuilder toString(final int value, final StringBuilder dst) {
         return intToString(value, dst);
     }
@@ -177,6 +195,11 @@ public class HexCodec implements ShortStringCodec {
     }
 
     @Override
+    public int toString(final short value, final Appendable appendable) {
+        throw new IllegalArgumentException("not implemented");//FIXME
+    }
+
+    @Override
     public int toString(final int value, final Appendable appendable) {
         throw new IllegalArgumentException("not implemented");//FIXME
     }
@@ -184,6 +207,12 @@ public class HexCodec implements ShortStringCodec {
     @Override
     public int toString(final long value, final Appendable appendable) {
         throw new IllegalArgumentException("not implemented");//FIXME
+    }
+
+    public static StringBuilder shortToString(final short value, final StringBuilder dst) {
+        final int mag = Short.SIZE - Integer.numberOfLeadingZeros(Math.abs(value));
+        final int len = Math.max(((mag + 3) / 4), 1);
+        return toHexString(value, len, value < 0, dst);
     }
 
     public static StringBuilder intToString(final int value, final StringBuilder dst) {
@@ -213,6 +242,11 @@ public class HexCodec implements ShortStringCodec {
             val >>>= 4;
         } while (val != 0 && charPos > offset);
         return dst;
+    }
+
+    @Override
+    public boolean isConvertibleToShort(final CharSequence value) {
+        return isConvertible(value, MAX_SHORT_STRING_LENGTH);
     }
 
     @Override

@@ -33,12 +33,20 @@ import static org.tools4j.shortstring.Chars.leq;
  * @see Long#toString(long)
  */
 public class NumericCodec implements ShortStringCodec {
+    public static final String MAX_SHORT_STRING = Integer.toString(Short.MAX_VALUE);
+    public static final String MIN_SHORT_STRING = Integer.toString(Short.MIN_VALUE);
     public static final String MAX_INT_STRING = Integer.toString(Integer.MAX_VALUE);
     public static final String MIN_INT_STRING = Integer.toString(Integer.MIN_VALUE);
     public static final String MAX_LONG_STRING = Long.toString(Long.MAX_VALUE);
     public static final String MIN_LONG_STRING = Long.toString(Long.MIN_VALUE);
+    public static final int MAX_SHORT_STRING_LENGTH = MAX_SHORT_STRING.length();
     public static final int MAX_INT_STRING_LENGTH = MAX_INT_STRING.length();
     public static final int MAX_LONG_STRING_LENGTH = MAX_LONG_STRING.length();
+
+    @Override
+    public int maxShortLength() {
+        return MAX_SHORT_STRING_LENGTH;
+    }
 
     @Override
     public int maxIntLength() {
@@ -48,6 +56,11 @@ public class NumericCodec implements ShortStringCodec {
     @Override
     public int maxLongLength() {
         return MAX_LONG_STRING_LENGTH;
+    }
+
+    @Override
+    public short toShort(final CharSequence value) {
+        throw new IllegalArgumentException("not implemented");//FIXME
     }
 
     @Override
@@ -165,6 +178,11 @@ public class NumericCodec implements ShortStringCodec {
     }
 
     @Override
+    public int toString(final short value, final Appendable appendable) {
+        throw new IllegalArgumentException("not implemented");//FIXME
+    }
+
+    @Override
     public int toString(final int value, final Appendable appendable) {
         throw new IllegalArgumentException("not implemented");//FIXME
     }
@@ -173,6 +191,12 @@ public class NumericCodec implements ShortStringCodec {
     public int toString(final long value, final Appendable appendable) {
         throw new IllegalArgumentException("not implemented");//FIXME
     }
+
+    @Override
+    public StringBuilder toString(final short value, final StringBuilder dst) {
+        return shortToString(value, dst);
+    }
+
     @Override
     public StringBuilder toString(final int value, final StringBuilder dst) {
         return intToString(value, dst);
@@ -181,6 +205,10 @@ public class NumericCodec implements ShortStringCodec {
     @Override
     public StringBuilder toString(final long value, final StringBuilder dst) {
         return longToString(value, dst);
+    }
+
+    public static StringBuilder shortToString(final short value, final StringBuilder dst) {
+        return dst.append(value);
     }
 
     public static StringBuilder intToString(final int value, final StringBuilder dst) {
@@ -192,6 +220,11 @@ public class NumericCodec implements ShortStringCodec {
     }
 
     @Override
+    public boolean isConvertibleToShort(final CharSequence value) {
+        return isValidShortString(value);
+    }
+
+    @Override
     public boolean isConvertibleToInt(final CharSequence seq) {
         return isValidIntString(seq);
     }
@@ -199,6 +232,24 @@ public class NumericCodec implements ShortStringCodec {
     @Override
     public boolean isConvertibleToLong(final CharSequence value) {
         return isValidLongString(value);
+    }
+
+    public static boolean isValidShortString(final CharSequence value) {
+        final int len = value.length();
+        if (len < 1 || len > MAX_SHORT_STRING_LENGTH + 1) {
+            return false;
+        }
+        final SeqType seq = SeqType.sequenceFor(value);
+        switch (seq) {
+            case NUMERIC_UNSIGNED:
+                return len < MAX_SHORT_STRING_LENGTH ||
+                        (len == MAX_SHORT_STRING_LENGTH && leq(value, MAX_SHORT_STRING));
+            case NUMERIC_SIGNED:
+                return len <= MAX_SHORT_STRING_LENGTH ||
+                        (len == MAX_SHORT_STRING_LENGTH + 1 && leq(value, MIN_SHORT_STRING));
+            default:
+                return false;
+        }
     }
 
     public static boolean isValidIntString(final CharSequence value) {
@@ -212,24 +263,26 @@ public class NumericCodec implements ShortStringCodec {
                 return len < MAX_INT_STRING_LENGTH ||
                         (len == MAX_INT_STRING_LENGTH && leq(value, MAX_INT_STRING));
             case NUMERIC_SIGNED:
-                return len <= MAX_INT_STRING_LENGTH;
+                return len <= MAX_INT_STRING_LENGTH ||
+                        (len == MAX_INT_STRING_LENGTH + 1 && leq(value, MIN_INT_STRING));
             default:
                 return false;
         }
     }
 
-    public static boolean isValidLongString(final CharSequence seq) {
-        final int len = seq.length();
+    public static boolean isValidLongString(final CharSequence value) {
+        final int len = value.length();
         if (len < 1 || len > MAX_LONG_STRING_LENGTH + 1) {
             return false;
         }
-        final SeqType encoding = SeqType.sequenceFor(seq);
+        final SeqType encoding = SeqType.sequenceFor(value);
         switch (encoding) {
             case NUMERIC_UNSIGNED:
                 return len < MAX_LONG_STRING_LENGTH ||
-                        (len == MAX_LONG_STRING_LENGTH && leq(seq, MAX_LONG_STRING));
+                        (len == MAX_LONG_STRING_LENGTH && leq(value, MAX_LONG_STRING));
             case NUMERIC_SIGNED:
-                return len <= MAX_LONG_STRING_LENGTH;
+                return len <= MAX_LONG_STRING_LENGTH ||
+                        (len == MAX_LONG_STRING_LENGTH + 1 && leq(value, MIN_LONG_STRING));
             default:
                 return false;
         }

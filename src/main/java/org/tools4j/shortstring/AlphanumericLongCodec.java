@@ -47,8 +47,8 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  * alphanumeric strings of length 12 (or signed 13), and most length 13 (or signed 14) strings with at least 11 leading
  * letters.
  * <p><br>
- * All longs are valid integer representations.  The string representation of a fully-numeric value is simply the
- * long's to-string representation.
+ * All longs are valid.  The string representation of a fully-numeric value is simply the long's to-string
+ * representation.
  * <p><br>
  * Examples of valid and invalid string representations are:
  * <pre>
@@ -336,9 +336,9 @@ public enum AlphanumericLongCodec {
             if (code < 0) {
                 if (code != Long.MIN_VALUE || !isConvertibleToLong(value)) {
                     throw new IllegalArgumentException(
-                            "Alphanumeric 13-char value exceeds max allowed: " + value + (off == 0
-                                    ? (" > " + MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12)
-                                    : (" < " + MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12)));
+                            "Alphanumeric 13-char value exceeds max allowed: " + value + " > " + (off == 0 ?
+                                    MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12 :  MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12
+                    ));
                 }
             }
             return off == 0 ? code : -code;

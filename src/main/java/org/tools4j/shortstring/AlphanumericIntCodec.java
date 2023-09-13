@@ -43,8 +43,8 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
 /**
  * Codec translating short alphanumeric strings to integers and back. Strings up to length 6 (or signed 7) are supported.
  * <p><br>
- * All integers are valid integer representations.  The string representation of a fully-numeric value is simply the
- * integer's to-string representation.
+ * All integers are valid.  The string representation of a fully-numeric value is simply the integer's to-string
+ * representation.
  * <p><br>
  * Examples of valid and invalid string representations are:
  * <pre>
@@ -267,9 +267,9 @@ public enum AlphanumericIntCodec {
             if (code < 0) {
                 if (code != Integer.MIN_VALUE || !isConvertibleToInt(value)) {
                     throw new IllegalArgumentException(
-                            "Digit-prefixed value exceeds max allowed: " + value + (off == 0
-                                    ? (" > " + MAX_DIGIT_PREFIXED_ALPHANUMERIC)
-                                    : (" < " + MIN_DIGIT_PREFIXED_ALPHANUMERIC)));
+                            "Digit-prefixed value exceeds max allowed: " + value + " > " + (off == 0 ?
+                                    MAX_DIGIT_PREFIXED_ALPHANUMERIC : MIN_DIGIT_PREFIXED_ALPHANUMERIC
+                            ));
                 }
             }
             return off == 0 ? code : -code;

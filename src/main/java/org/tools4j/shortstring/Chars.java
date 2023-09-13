@@ -226,6 +226,10 @@ enum Chars {
         throw new IllegalArgumentException("Illegal digit character '" + ch + "' in value string: " + seq);
     }
 
+    static int charToSeq(final int seq, final int index, final char ch) {
+        return seq | ((ch & 0xff) << (index << 3));
+    }
+
     static long charToSeq(final long seq, final int index, final char ch) {
         return seq | ((ch & 0xffL) << (index << 3));
     }
@@ -236,6 +240,10 @@ enum Chars {
 
     static long charToBiSeq2(final long seq2, final int index, final char ch) {
         return index < 8 ? seq2 : charToSeq(seq2, index - Long.BYTES, ch);
+    }
+
+    static char charFromSeq(final int seq, final int index) {
+        return (char)((seq >>> (index << 3)) & 0xff);
     }
 
     static char charFromSeq(final long seq, final int index) {

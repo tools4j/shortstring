@@ -47,6 +47,109 @@ class AlphanumericCodecTest {
     final ShortStringCodec codec = ShortString.ALPHANUMERIC;
 
     @Test
+    void printSomeShorts() {
+        final Consumer<String> stringPrinter = s -> {
+            System.out.println(("    " + s).substring(s.length()) + " --> " + codec.toShort(s));
+        };
+        final IntConsumer shortPrinter = i -> {
+            System.out.println(("      " + i).substring(("" + i).length()) + " --> " + codec.toString((short)i));
+        };
+
+        stringPrinter.accept("-1");
+        stringPrinter.accept("-9");
+        stringPrinter.accept("-10");
+        stringPrinter.accept("-19");
+        stringPrinter.accept("-99");
+        stringPrinter.accept("-100");
+        stringPrinter.accept("-999");
+        stringPrinter.accept("0");
+        stringPrinter.accept("9");
+        stringPrinter.accept("10");
+        stringPrinter.accept("19");
+        stringPrinter.accept("99");
+        stringPrinter.accept("100");
+        stringPrinter.accept("999");
+        stringPrinter.accept("A");
+        stringPrinter.accept("Z");
+        stringPrinter.accept("AA");
+        stringPrinter.accept("AZ");
+        stringPrinter.accept("ZZ");
+        stringPrinter.accept("AA0");
+        stringPrinter.accept("AA9");
+        stringPrinter.accept("AAA");
+        stringPrinter.accept("AAZ");
+        stringPrinter.accept("AB0");
+        stringPrinter.accept("AZ0");
+        stringPrinter.accept("AZ9");
+        stringPrinter.accept("AZA");
+        stringPrinter.accept("AZZ");
+        stringPrinter.accept("ZZ0");
+        stringPrinter.accept("ZZ9");
+        stringPrinter.accept("ZZZ");
+        stringPrinter.accept("A0");
+        stringPrinter.accept("A9");
+        stringPrinter.accept("B0");
+        stringPrinter.accept("Z0");
+        stringPrinter.accept("Z9");
+        stringPrinter.accept("A00");
+        stringPrinter.accept("A09");
+        stringPrinter.accept("A0Z");
+        stringPrinter.accept("A10");
+        stringPrinter.accept("A1Z");
+        stringPrinter.accept("A90");
+        stringPrinter.accept("A9Z");
+        stringPrinter.accept("B00");
+        stringPrinter.accept("B9Z");
+        stringPrinter.accept("R8Z");
+        stringPrinter.accept("R9O");
+        stringPrinter.accept("R9P");
+
+        stringPrinter.accept(".A");
+        stringPrinter.accept(".Z");
+        stringPrinter.accept(".AA");
+        stringPrinter.accept(".AZ");
+        stringPrinter.accept(".ZZ");
+        stringPrinter.accept(".AA0");
+        stringPrinter.accept(".AA9");
+        stringPrinter.accept(".AAA");
+        stringPrinter.accept(".AAZ");
+        stringPrinter.accept(".AB0");
+        stringPrinter.accept(".AZ0");
+        stringPrinter.accept(".AZ9");
+        stringPrinter.accept(".AZA");
+        stringPrinter.accept(".AZZ");
+        stringPrinter.accept(".ZZ0");
+        stringPrinter.accept(".ZZ9");
+        stringPrinter.accept(".ZZZ");
+        stringPrinter.accept(".A0");
+        stringPrinter.accept(".A9");
+        stringPrinter.accept(".B0");
+        stringPrinter.accept(".Z0");
+        stringPrinter.accept(".Z9");
+        stringPrinter.accept(".A00");
+        stringPrinter.accept(".A09");
+        stringPrinter.accept(".A0Z");
+        stringPrinter.accept(".A10");
+        stringPrinter.accept(".A1Z");
+        stringPrinter.accept(".A90");
+        stringPrinter.accept(".A9Z");
+        stringPrinter.accept(".B00");
+        stringPrinter.accept(".B9Z");
+        stringPrinter.accept(".R8Z");
+        stringPrinter.accept(".R9P");
+        stringPrinter.accept(".R9Q");
+
+        shortPrinter.accept(AlphanumericShortCodec.MIN_NUMERIC);
+        shortPrinter.accept(AlphanumericShortCodec.MAX_NUMERIC);
+        shortPrinter.accept(AlphanumericShortCodec.MIN_NUMERIC - 1);
+        shortPrinter.accept(AlphanumericShortCodec.MAX_NUMERIC + 1);
+        shortPrinter.accept(Short.MAX_VALUE - 1);
+        shortPrinter.accept(Short.MAX_VALUE);
+        shortPrinter.accept(Short.MIN_VALUE + 1);
+        shortPrinter.accept(Short.MAX_VALUE);
+    }
+
+    @Test
     void printSomeInts() {
         final Consumer<String> stringPrinter = s -> {
             System.out.println(("       " + s).substring(s.length()) + " --> " + codec.toInt(s));
@@ -390,6 +493,22 @@ class AlphanumericCodecTest {
     }
 
     @Test
+    void randomShorts() {
+        final int n = 10_000_000;
+        final Random random = new Random();
+        final StringBuilder builder = new StringBuilder(codec.maxLongLength() + 1);
+        long count = 0;
+        final long ts = System.nanoTime();
+        for (int i = 0; i < n; i++) {
+            final short value = (short)random.nextInt();
+            testToFrom(codec, value, builder);
+            count++;
+        }
+        final long te = System.nanoTime();
+        System.out.println("Tested: " + count + ", " + (float)((te-ts) / (0.0 + count)) + "ns/double-conversion");
+    }
+
+    @Test
     void randomLongs() {
         final int n = 10_000_000;
         final Random random = new Random();
@@ -406,7 +525,40 @@ class AlphanumericCodecTest {
     }
 
     @Test
-    @Disabled//exhaustive test, runs for quite some time (approx. 4-5 min, ~60ns per double-conversion).
+    void allShorts() {
+        final ShortStringCodec theCodec = codec;
+        final StringBuilder builder = new StringBuilder(theCodec.maxIntLength() + 1);
+        long count = 0;
+        final long ts = System.nanoTime();
+        for (int i = 0; i <= Short.MAX_VALUE; i++) {
+            testToFrom(theCodec, (short)i, builder);
+            testToFrom(theCodec, (short)-(i+1), builder);
+            count += 2;
+        }
+        final long te = System.nanoTime();
+        System.out.println("Tested: " + count + ", " + (float)((te-ts) / (0.0 + count)) + "ns/double-conversion");
+    }
+
+    @Test
+    void timeShorts() {
+        final int n = 10_000_000;
+        final ShortStringCodec theCodec = codec;
+        final StringBuilder builder = new StringBuilder(theCodec.maxIntLength() + 1);
+        long count = 0;
+        final long ts = System.nanoTime();
+        while (count < n) {
+            for (int i = 0; i <= Short.MAX_VALUE; i++) {
+                testToFrom(theCodec, (short) i, builder);
+                testToFrom(theCodec, (short) -(i + 1), builder);
+                count += 2;
+            }
+        }
+        final long te = System.nanoTime();
+        System.out.println("Tested: " + count + ", " + (float)((te-ts) / (0.0 + count)) + "ns/double-conversion");
+    }
+
+    @Test
+    @Disabled//exhaustive test, runs for quite some time (approx. 3-4 min, ~52ns per double-conversion).
     void allInts() {
         final ShortStringCodec theCodec = codec;
         final long printInterval = 10_000_000;
