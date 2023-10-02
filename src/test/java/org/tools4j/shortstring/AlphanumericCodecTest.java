@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Random;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
@@ -36,6 +37,8 @@ import static org.tools4j.shortstring.AlphanumericIntCodec.MAX_DIGIT_PREFIXED_AL
 import static org.tools4j.shortstring.AlphanumericIntCodec.MIN_DIGIT_PREFIXED_ALPHANUMERIC;
 import static org.tools4j.shortstring.AlphanumericLongCodec.MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12;
 import static org.tools4j.shortstring.AlphanumericLongCodec.MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12;
+import static org.tools4j.shortstring.AlphanumericShortCodec.MAX_LETTER_DIGIT_PREFIXED_ALPHANUMERIC;
+import static org.tools4j.shortstring.AlphanumericShortCodec.MIN_LETTER_DIGIT_PREFIXED_ALPHANUMERIC;
 import static org.tools4j.shortstring.ShortStringCodecTest.testToFrom;
 
 /**
@@ -146,7 +149,103 @@ class AlphanumericCodecTest {
         shortPrinter.accept(Short.MAX_VALUE - 1);
         shortPrinter.accept(Short.MAX_VALUE);
         shortPrinter.accept(Short.MIN_VALUE + 1);
-        shortPrinter.accept(Short.MAX_VALUE);
+        shortPrinter.accept(Short.MIN_VALUE);
+    }
+
+    @Test
+    void someShorts() {
+        assertEquals((short)-1, codec.toShort("-1"));
+        assertEquals((short)-9, codec.toShort("-9"));
+        assertEquals((short)-10, codec.toShort("-10"));
+        assertEquals((short)-19, codec.toShort("-19"));
+        assertEquals((short)-99, codec.toShort("-99"));
+        assertEquals((short)-100, codec.toShort("-100"));
+        assertEquals((short)-999, codec.toShort("-999"));
+        assertEquals((short)0, codec.toShort("0"));
+        assertEquals((short)9, codec.toShort("9"));
+        assertEquals((short)10, codec.toShort("10"));
+        assertEquals((short)19, codec.toShort("19"));
+        assertEquals((short)99, codec.toShort("99"));
+        assertEquals((short)100, codec.toShort("100"));
+        assertEquals((short)999, codec.toShort("999"));
+        assertEquals((short)1000, codec.toShort("A"));
+        assertEquals((short)1025, codec.toShort("Z"));
+        assertEquals((short)1026, codec.toShort("AA"));
+        assertEquals((short)1051, codec.toShort("AZ"));
+        assertEquals((short)1701, codec.toShort("ZZ"));
+        assertEquals((short)1702, codec.toShort("AA0"));
+        assertEquals((short)1711, codec.toShort("AA9"));
+        assertEquals((short)1712, codec.toShort("AAA"));
+        assertEquals((short)1737, codec.toShort("AAZ"));
+        assertEquals((short)1738, codec.toShort("AB0"));
+        assertEquals((short)2602, codec.toShort("AZ0"));
+        assertEquals((short)2611, codec.toShort("AZ9"));
+        assertEquals((short)2612, codec.toShort("AZA"));
+        assertEquals((short)2637, codec.toShort("AZZ"));
+        assertEquals((short)26002, codec.toShort("ZZ0"));
+        assertEquals((short)26011, codec.toShort("ZZ9"));
+        assertEquals((short)26037, codec.toShort("ZZZ"));
+        assertEquals((short)26038, codec.toShort("A0"));
+        assertEquals((short)26047, codec.toShort("A9"));
+        assertEquals((short)26048, codec.toShort("B0"));
+        assertEquals((short)26288, codec.toShort("Z0"));
+        assertEquals((short)26297, codec.toShort("Z9"));
+        assertEquals((short)26298, codec.toShort("A00"));
+        assertEquals((short)26307, codec.toShort("A09"));
+        assertEquals((short)26333, codec.toShort("A0Z"));
+        assertEquals((short)26334, codec.toShort("A10"));
+        assertEquals((short)26369, codec.toShort("A1Z"));
+        assertEquals((short)26622, codec.toShort("A90"));
+        assertEquals((short)26657, codec.toShort("A9Z"));
+        assertEquals((short)26658, codec.toShort("B00"));
+        assertEquals((short)27017, codec.toShort("B9Z"));
+        assertEquals((short)32741, codec.toShort("R8Z"));
+        assertEquals(Short.MAX_VALUE - 1, codec.toShort("R9O"));
+        assertEquals(Short.MAX_VALUE, codec.toShort(MAX_LETTER_DIGIT_PREFIXED_ALPHANUMERIC));
+
+        assertEquals((short)-1000, codec.toShort(".A"));
+        assertEquals((short)-1025, codec.toShort(".Z"));
+        assertEquals((short)-1026, codec.toShort(".AA"));
+        assertEquals((short)-1051, codec.toShort(".AZ"));
+        assertEquals((short)-1701, codec.toShort(".ZZ"));
+        assertEquals((short)-1702, codec.toShort(".AA0"));
+        assertEquals((short)-1711, codec.toShort(".AA9"));
+        assertEquals((short)-1712, codec.toShort(".AAA"));
+        assertEquals((short)-1737, codec.toShort(".AAZ"));
+        assertEquals((short)-1738, codec.toShort(".AB0"));
+        assertEquals((short)-2602, codec.toShort(".AZ0"));
+        assertEquals((short)-2611, codec.toShort(".AZ9"));
+        assertEquals((short)-2612, codec.toShort(".AZA"));
+        assertEquals((short)-2637, codec.toShort(".AZZ"));
+        assertEquals((short)-26002, codec.toShort(".ZZ0"));
+        assertEquals((short)-26011, codec.toShort(".ZZ9"));
+        assertEquals((short)-26037, codec.toShort(".ZZZ"));
+        assertEquals((short)-26038, codec.toShort(".A0"));
+        assertEquals((short)-26047, codec.toShort(".A9"));
+        assertEquals((short)-26048, codec.toShort(".B0"));
+        assertEquals((short)-26288, codec.toShort(".Z0"));
+        assertEquals((short)-26297, codec.toShort(".Z9"));
+        assertEquals((short)-26298, codec.toShort(".A00"));
+        assertEquals((short)-26307, codec.toShort(".A09"));
+        assertEquals((short)-26333, codec.toShort(".A0Z"));
+        assertEquals((short)-26334, codec.toShort(".A10"));
+        assertEquals((short)-26369, codec.toShort(".A1Z"));
+        assertEquals((short)-26622, codec.toShort(".A90"));
+        assertEquals((short)-26657, codec.toShort(".A9Z"));
+        assertEquals((short)-26658, codec.toShort(".B00"));
+        assertEquals((short)-27017, codec.toShort(".B9Z"));
+        assertEquals((short)-32741, codec.toShort(".R8Z"));
+        assertEquals(Short.MIN_VALUE + 1, codec.toShort(".R9P"));
+        assertEquals(Short.MIN_VALUE, codec.toShort(MIN_LETTER_DIGIT_PREFIXED_ALPHANUMERIC));
+
+        assertEquals("-999", codec.toString(AlphanumericShortCodec.MIN_NUMERIC));
+        assertEquals("999", codec.toString(AlphanumericShortCodec.MAX_NUMERIC));
+        assertEquals(".A", codec.toString((short)(AlphanumericShortCodec.MIN_NUMERIC - 1)));
+        assertEquals("A", codec.toString((short)(AlphanumericShortCodec.MAX_NUMERIC + 1)));
+        assertEquals("R9O", codec.toString((short)(Short.MAX_VALUE - 1)));
+        assertEquals("R9P", codec.toString(Short.MAX_VALUE));
+        assertEquals(".R9P", codec.toString((short)(Short.MIN_VALUE + 1)));
+        assertEquals(".R9Q", codec.toString(Short.MIN_VALUE));
     }
 
     @Test
@@ -477,6 +576,193 @@ class AlphanumericCodecTest {
     }
 
     @Test
+    void intToShort() {
+        final AlphanumericCodec codec = new AlphanumericCodec();
+        someShortStrings(s -> {
+            final int ival = codec.toInt(s);
+            final short sval = codec.toShort(s);
+            assertEquals(sval, codec.intToShort(ival), s);
+        });
+    }
+
+    @Test
+    void longToShort() {
+        final AlphanumericCodec codec = new AlphanumericCodec();
+        someShortStrings(s -> {
+            final long lval = codec.toLong(s);
+            final short sval = codec.toShort(s);
+            assertEquals(sval, codec.longToShort(lval), s);
+        });
+    }
+
+    @Test
+    void longToInt() {
+        final AlphanumericCodec codec = new AlphanumericCodec();
+        final Consumer<String> asserter = s -> {
+            final long lval = codec.toLong(s);
+            final int ival = codec.toInt(s);
+            assertEquals(ival, codec.longToInt(lval), s);
+        };
+        someShortStrings(asserter);
+        someIntStrings(asserter);
+    }
+
+    interface Sub {
+        void sub(String str, int start, int end);
+    }
+    private void assertIntSubstring(final AlphanumericCodec codec,
+                                    final String str, final int start, final int end,
+                                    final String exp) {
+        final int ival = codec.toInt(str);
+        final short subval = codec.substringOfIntToShort(ival, start, end);
+        assertEquals(codec.toShort(exp), subval, str + "[" + start + ":" + end + "]=" + exp);
+    }
+
+    @Test
+    void intSubstring() {
+        final AlphanumericCodec codec = new AlphanumericCodec();
+        assertIntSubstring(codec, "ABC", 0, Integer.MAX_VALUE, "ABC");
+        assertIntSubstring(codec, "ABC", 1, Integer.MAX_VALUE, "BC");
+        assertIntSubstring(codec, "ABC", 2, Integer.MAX_VALUE, "C");
+        assertIntSubstring(codec, "ABC", -1, Integer.MAX_VALUE, "C");
+        assertIntSubstring(codec, "ABC", -2, Integer.MAX_VALUE, "BC");
+        assertIntSubstring(codec, "ABC", -3, Integer.MAX_VALUE, "ABC");
+        assertIntSubstring(codec, ".ABC", 0, Integer.MAX_VALUE, ".ABC");
+        assertIntSubstring(codec, ".ABC", 1, Integer.MAX_VALUE, "ABC");
+        assertIntSubstring(codec, ".ABC", 2, Integer.MAX_VALUE, "BC");
+        assertIntSubstring(codec, ".ABC", 3, Integer.MAX_VALUE, "C");
+        assertIntSubstring(codec, ".ABC", -1, Integer.MAX_VALUE, "C");
+        assertIntSubstring(codec, ".ABC", -2, Integer.MAX_VALUE, "BC");
+        assertIntSubstring(codec, ".ABC", -3, Integer.MAX_VALUE, "ABC");
+        assertIntSubstring(codec, ".ABC", -4, Integer.MAX_VALUE, ".ABC");
+        assertIntSubstring(codec, "AUDUSD", 0, 3, "AUD");
+        assertIntSubstring(codec, "AUDUSD", 0, -3, "AUD");
+        assertIntSubstring(codec, "AUDUSD", 3, 6, "USD");
+        assertIntSubstring(codec, "AUDUSD", -3, 6, "USD");
+        assertIntSubstring(codec, "AUDUSD", -3, Integer.MAX_VALUE, "USD");
+        assertIntSubstring(codec, "AUDUSD", -2, Integer.MAX_VALUE, "SD");
+        assertIntSubstring(codec, "AUDUSD", -1, Integer.MAX_VALUE, "D");
+        assertIntSubstring(codec, "AUDUSD", 2, -1, "DUS");
+        assertIntSubstring(codec, "AUDUSD", -2, -1, "S");
+        for (int e = 1; e < 3; e++) {
+            assertIntSubstring(codec, "ABCDEF", 0, e, "ABCDEF".substring(0, e));
+            assertIntSubstring(codec, ".ABCDEF", 0, e + 1, ".ABCDEF".substring(0, e + 1));
+        }
+        for (int s = 3; s < 6; s++) {
+            assertIntSubstring(codec, "ABCDEF", s, Integer.MAX_VALUE, "ABCDEF".substring(s));
+            assertIntSubstring(codec, ".ABCDEF", s + 1, Integer.MAX_VALUE, ".ABCDEF".substring(s + 1));
+        }
+        for (int s = 0; s < 6; s++) {
+            for (int e = s + 1; e < Math.min(6, s + 1 + 3); e++) {
+                assertIntSubstring(codec, "ABCDEF", s, e, "ABCDEF".substring(s, e));
+            }
+        }
+    }
+
+    private void someShortStrings(final Consumer<String> asserter) {
+        asserter.accept("0");
+        asserter.accept("1");
+        asserter.accept("9");
+        asserter.accept("A");
+        asserter.accept("B");
+        asserter.accept("C");
+        asserter.accept("AB");
+        asserter.accept("ZZ");
+        asserter.accept("ABC");
+        asserter.accept("AUD");
+        asserter.accept("USD");
+        asserter.accept("ZZZ");
+        asserter.accept("ZZ1");
+        asserter.accept("A11");
+        asserter.accept("-1");
+        asserter.accept("-9");
+        asserter.accept(".A");
+        asserter.accept(".B");
+        asserter.accept(".C");
+        asserter.accept(".AB");
+        asserter.accept(".ZZ");
+        asserter.accept(".ABC");
+        asserter.accept(".AUD");
+        asserter.accept(".USD");
+        asserter.accept(".ZZZ");
+        asserter.accept(".ZZ1");
+        asserter.accept(".A11");
+    }
+
+    private void someIntStrings(final Consumer<String> asserter) {
+        asserter.accept("1000");
+        asserter.accept("10000");
+        asserter.accept("12345");
+        asserter.accept("99999");
+        asserter.accept("00");
+        asserter.accept("000");
+        asserter.accept("0000");
+        asserter.accept("00000");
+        asserter.accept("000000");
+        asserter.accept("01");
+        asserter.accept("002");
+        asserter.accept("0003");
+        asserter.accept("00004");
+        asserter.accept("000005");
+        asserter.accept("0A");
+        asserter.accept("00B");
+        asserter.accept("000X");
+        asserter.accept("0000Y");
+        asserter.accept("00000Y");
+        asserter.accept("007008");
+        asserter.accept("ABCDEF");
+        asserter.accept("ZZZZZZ");
+        asserter.accept("-1000");
+        asserter.accept("-10000");
+        asserter.accept("-12345");
+        asserter.accept("-99999");
+        asserter.accept(".00");
+        asserter.accept(".000");
+        asserter.accept(".0000");
+        asserter.accept(".00000");
+        asserter.accept(".000000");
+        asserter.accept(".01");
+        asserter.accept(".002");
+        asserter.accept(".0003");
+        asserter.accept(".00004");
+        asserter.accept(".000005");
+        asserter.accept(".0A");
+        asserter.accept(".00B");
+        asserter.accept(".000X");
+        asserter.accept(".0000Y");
+        asserter.accept(".00000Y");
+        asserter.accept(".007008");
+        asserter.accept(".ABCDEF");
+        asserter.accept(".ZZZZZZ");
+    }
+
+    @Test
+    void concat() {
+        final AlphanumericCodec codec = new AlphanumericCodec();
+        final BiConsumer<String, String> shortConcat = (s1, s2) -> {
+            final short short1 = codec.toShort(s1);
+            final short short2 = codec.toShort(s2);
+            final int concat = codec.toInt(s1 + s2);
+            assertEquals(concat, codec.concatShortsToInt(short1, short2), s1 + s2);
+        };
+        final BiConsumer<String, String> intConcat = (s1, s2) -> {
+            final int int1 = codec.toInt(s1);
+            final int int2 = codec.toInt(s2);
+            final long concat = codec.toLong(s1 + s2);
+            assertEquals(concat, codec.concatIntsToLong(int1, int2), s1 + s2);
+        };
+
+
+        shortConcat.accept("AUD", "USD");
+        shortConcat.accept("USD", "IN1");
+        shortConcat.accept("AU", "TO");
+        intConcat.accept("AUD", "USD");
+        intConcat.accept("USD", "IN1");
+        intConcat.accept("AU", "TO");
+        intConcat.accept("HELLO", "WORLD");
+    }
+
+    @Test
     void randomInts() {
         final int n = 10_000_000;
         final Random random = new Random();
@@ -519,6 +805,25 @@ class AlphanumericCodecTest {
             final long value = random.nextLong();
             testToFrom(codec, value, builder);
             count++;
+        }
+        final long te = System.nanoTime();
+        System.out.println("Tested: " + count + ", " + (float)((te-ts) / (0.0 + count)) + "ns/double-conversion");
+    }
+
+    @Test
+    void timeLongs() {
+        final int n = 10_000_000;
+        final int p = 1_000;
+        final Random random = new Random();
+        final StringBuilder builder = new StringBuilder(codec.maxLongLength() + 1);
+        long count = 0;
+        final long ts = System.nanoTime();
+        for (int i = 0; i < n; i += p) {
+            final long rand = random.nextLong();
+            for (int j = 0; j < p; j++) {
+                testToFrom(codec, rand + j, builder);
+                count++;
+            }
         }
         final long te = System.nanoTime();
         System.out.println("Tested: " + count + ", " + (float)((te-ts) / (0.0 + count)) + "ns/double-conversion");

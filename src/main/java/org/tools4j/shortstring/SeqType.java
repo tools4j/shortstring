@@ -23,6 +23,8 @@
  */
 package org.tools4j.shortstring;
 
+import static org.tools4j.shortstring.Chars.charFromSeq;
+
 enum SeqType {
     NUMERIC_UNSIGNED,
     NUMERIC_SIGNED,
@@ -68,8 +70,41 @@ enum SeqType {
             type = type.thenChar(seq.charAt(i));
         }
         if (len == 2 && type == DIGIT_PREFIXED_ALPHANUMERIC_SIGNED) {
-            //".0' to ".9" are all invalid, but ".0' is valid
+            //".0' to ".9" are all invalid
             return INVALID;
+        }
+        return type;
+    }
+
+    static SeqType sequenceFor(final long seq) {
+        if (seq == 0) {
+            return INVALID;
+        }
+        long val = seq;
+        final CharType charType = CharType.forChar(charFromSeq(val, 0));
+        val >>>= 8;
+        if (val == 0) {
+            return forSingleChar(charType);
+        }
+        SeqType type = forMultiChar(charType, charFromSeq(val, 0));
+        val >>>= 8;
+        if (val == 0 && type == DIGIT_PREFIXED_ALPHANUMERIC_SIGNED) {
+            //".0' to ".9" are all invalid
+            return INVALID;
+        }
+        while (val != 0) {
+            type = type.thenChar(charFromSeq(val, 0));
+            val >>>= 8;
+        }
+        return type;
+    }
+
+    static SeqType sequenceFor(final long seq1, final long seq2) {
+        SeqType type = sequenceFor(seq1);
+        long val = seq2;
+        while (val != 0) {
+            type = type.thenChar(charFromSeq(val, 0));
+            val >>>= 8;
         }
         return type;
     }

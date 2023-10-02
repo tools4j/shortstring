@@ -24,13 +24,16 @@
 package org.tools4j.shortstring;
 
 import static org.tools4j.shortstring.Chars.appendSeq;
+import static org.tools4j.shortstring.Chars.charFromSeq;
 import static org.tools4j.shortstring.Chars.charToSeq;
 import static org.tools4j.shortstring.Chars.fromAlphanumeric;
 import static org.tools4j.shortstring.Chars.fromDigit;
 import static org.tools4j.shortstring.Chars.fromLetter;
+import static org.tools4j.shortstring.Chars.intSeq;
 import static org.tools4j.shortstring.Chars.isDigit;
 import static org.tools4j.shortstring.Chars.isLetter;
 import static org.tools4j.shortstring.Chars.leq;
+import static org.tools4j.shortstring.Chars.seqToString;
 import static org.tools4j.shortstring.Chars.startsWithSignChar;
 import static org.tools4j.shortstring.Chars.toAlphanumeric;
 import static org.tools4j.shortstring.Chars.toDigit;
@@ -153,34 +156,37 @@ public enum AlphanumericShortCodec {
     public static final String MIN_LETTER_DIGIT_PREFIXED_ALPHANUMERIC = ".R9Q";
 
     public static short toShort(final CharSequence value) {
-        final int len = value.length();
-        final int off = startsWithSignChar(value) ? 1 : 0;
+        return toShort(intSeq(value), value.length());
+    }
+
+    static short toShort(final int seq, final int len) {
+        final int off = startsWithSignChar(seq) ? 1 : 0;
         if (len <= off) {
-            throw new IllegalArgumentException(len == 0 ? "Empty value string" : "Invalid sign-only string: " + value);
+            throw new IllegalArgumentException(len == 0 ? "Empty value string" : "Invalid sign-only string: " + seqToString(seq));
         }
         if (len - off > MAX_LENGTH_UNSIGNED) {
-            throw new IllegalArgumentException("String exceeds max length");
+            throw new IllegalArgumentException("String exceeds max length: " + seqToString(seq));
         }
-        final SeqType seqType = SeqType.sequenceFor(value);
+        final SeqType seqType = SeqType.sequenceFor(seq);
         int code;
         if (seqType.isNumeric()) {
-            code = fromDigit(value.charAt(off), value);
+            code = fromDigit(charFromSeq(seq, off), seq);
             for (int i = off + 1; i < len; i++) {
                 code *= 10;
-                code += fromDigit(value.charAt(i), value);
+                code += fromDigit(charFromSeq(seq, i), seq);
             }
             return (short)(off == 0 ? code : -code);
         }
-        final char firstChar = seqType.isLetterPrefixAlphanumeric() ? value.charAt(off) : '\0';
-        final char secondChar = len > off + 1 ? value.charAt(off + 1) : '\0';
+        final char firstChar = seqType.isLetterPrefixAlphanumeric() ? charFromSeq(seq, off) : '\0';
+        final char secondChar = len > off + 1 ? charFromSeq(seq, off + 1) : '\0';
         if (isLetter(firstChar) && !isDigit(secondChar)) {
-            code = fromLetter(firstChar, value);
+            code = fromLetter(firstChar, seq);
             if (len > off + 1) {
                 code *= 26;
-                code += fromLetter(secondChar, value);
+                code += fromLetter(secondChar, seq);
                 if (len > off + 2) {
                     code *= 36;
-                    code += fromAlphanumeric(value.charAt(off + 2), value);
+                    code += fromAlphanumeric(charFromSeq(seq, off + 2), seq);
                     code += 26 + 26*26;
                 } else {
                     code += 26;
@@ -190,24 +196,24 @@ public enum AlphanumericShortCodec {
             return (short)(off == 0 ? code : -code);
         }
         if (isLetter(firstChar) && isDigit(secondChar)) {
-            code = fromLetter(firstChar, value);
+            code = fromLetter(firstChar, seq);
             code *= 10;
-            code += fromDigit(secondChar, value);
+            code += fromDigit(secondChar, seq);
             if (len > off + 2) {
                 code *= 36;
-                code += fromAlphanumeric(value.charAt(off + 2), value);
+                code += fromAlphanumeric(charFromSeq(seq, off + 2), seq);
                 code += 26*10;
             }
             code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH;
-            if (code > Short.MAX_VALUE && (off == 0 || code != -Short.MIN_VALUE)) {
+            if (code > Short.MAX_VALUE && (off == 0 || code != -(int)Short.MIN_VALUE)) {
                 throw new IllegalArgumentException(
-                        "Digit-prefixed value exceeds max allowed: " + value + " > " + (off == 0 ?
+                        "Digit-prefixed value exceeds max allowed: " + seqToString(seq) + " > " + (off == 0 ?
                                 MAX_LETTER_DIGIT_PREFIXED_ALPHANUMERIC : MIN_LETTER_DIGIT_PREFIXED_ALPHANUMERIC
                         ));
             }
             return (short)(off == 0 ? code : -code);
         }
-        throw new IllegalArgumentException("Invalid value string: " + value);
+        throw new IllegalArgumentException("Invalid value string: " + seqToString(seq));
     }
 
     public static StringBuilder toString(final short value, final StringBuilder dst) {
@@ -218,7 +224,7 @@ public enum AlphanumericShortCodec {
         return appendSeq(toSeq(value), appendable);
     }
 
-    private static int toSeq(final short value) {
+    static int toSeq(final short value) {
         final char sign;
         int val = Math.abs(value);
         int start = 0;

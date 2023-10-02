@@ -27,16 +27,6 @@ import java.io.IOException;
 
 enum Chars {
     ;
-    static void setChar(final char ch, final StringBuilder dst, final int dstIndex) {
-        if (dstIndex < dst.length()) {
-            dst.setCharAt(dstIndex, ch);
-        } else {
-            while (dstIndex > dst.length()) {
-                dst.append('0');
-            }
-            dst.append(ch);
-        }
-    }
 
     /**
      * Note: a shorter string is always considered before a longer string.
@@ -44,6 +34,22 @@ enum Chars {
      * @param b sequence b
      * @return true if a {@code a <= b}
      */
+    static boolean leq(final long a, final long b) {
+        return a <= b;
+    }
+
+    /**
+     * Note: a shorter string is always considered before a longer string.
+     * @param a1 first part of sequence a
+     * @param a2 second part of sequence a
+     * @param b sequence b
+     * @return true if a {@code a1|a2 <= b}
+     */
+    static boolean leq(final long a1, final long a2, final CharSequence b) {
+        final long b1 = longSeq1(b);
+        return a1 < b1 || (a1 == b1 && a2 <= longSeq2(b));
+    }
+
     static boolean leq(final CharSequence a, final CharSequence b) {
         final int len = a.length();
         if (len < b.length()) {
@@ -91,6 +97,20 @@ enum Chars {
         return isAlphanumeric(seq, 0, seq.length());
     }
 
+    static boolean isAlphanumeric(final long seq, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            if (!isAlphanumeric(charFromSeq(seq, i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static boolean isAlphanumeric(final long seq1, final long seq2, final int start, final int end) {
+        return isAlphanumeric(seq1, start, Math.min(Long.BYTES, end)) &&
+                isAlphanumeric(seq2, Math.max(Long.BYTES, start), end);
+    }
+
     static boolean isAlphanumeric(final CharSequence seq, final int start, final int end) {
         for (int i = start; i < end; i++) {
             if (!isAlphanumeric(seq.charAt(i))) {
@@ -98,6 +118,49 @@ enum Chars {
             }
         }
         return true;
+    }
+
+    static int indexOfFirstLetter(final long seq, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            if (isLetter(charFromSeq(seq, i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    static int indexOfFirstLetter(final long seq1, final long seq2, final int start, final int end) {
+        final int end1 = Math.min(Long.BYTES, end);
+        for (int i = start; i < end1; i++) {
+            if (isLetter(charFromSeq(seq1, i))) {
+                return i;
+            }
+        }
+        final int start2 = Math.max(0, start - Long.BYTES);
+        final int end2 = Math.max(0, end - Long.BYTES);
+        for (int i = start2; i < end2; i++) {
+            if (isLetter(charFromSeq(seq2, i))) {
+                return i + Long.BYTES;
+            }
+        }
+        return -1;
+    }
+
+    static int indexOfFirstDigit(final long seq1, final long seq2, final int start, final int end) {
+        final int end1 = Math.min(Long.BYTES, end);
+        for (int i = start; i < end1; i++) {
+            if (isDigit(charFromSeq(seq1, i))) {
+                return i;
+            }
+        }
+        final int start2 = Math.max(0, start - Long.BYTES);
+        final int end2 = Math.max(0, end - Long.BYTES);
+        for (int i = start2; i < end2; i++) {
+            if (isDigit(charFromSeq(seq2, i))) {
+                return i + Long.BYTES;
+            }
+        }
+        return -1;
     }
 
     static int indexOfFirstLetter(final CharSequence seq, final int start, final int end) {
@@ -147,6 +210,10 @@ enum Chars {
 
     static boolean isSignChar(final char ch) {
         return ch == '.' || ch == '-';
+    }
+
+    static boolean startsWithSignChar(final long seq) {
+        return isSignChar(charFromSeq(seq, 0));
     }
 
     static boolean startsWithSignChar(final CharSequence seq) {
@@ -202,11 +269,49 @@ enum Chars {
         return (char)(code + '0');
     }
 
+    static int fromLetter(final char ch, final long seq) {
+        if ('A' <= ch && ch <= 'Z') {
+            return ch - 'A';
+        }
+        throw new IllegalArgumentException("Illegal letter character '" + ch + "' in value string: " +
+                seqToString(seq));
+    }
+
+    static int fromLetter(final char ch, final long seq1, final long seq2) {
+        if ('A' <= ch && ch <= 'Z') {
+            return ch - 'A';
+        }
+        throw new IllegalArgumentException("Illegal letter character '" + ch + "' in value string: " +
+                biSeqToString(seq1, seq2));
+    }
+
     static int fromLetter(final char ch, final CharSequence seq) {
         if ('A' <= ch && ch <= 'Z') {
             return ch - 'A';
         }
         throw new IllegalArgumentException("Illegal letter character '" + ch + "' in value string: " + seq);
+    }
+
+    static int fromAlphanumeric(final char ch, final long seq) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        if ('A' <= ch && ch <= 'Z') {
+            return 10 + ch - 'A';
+        }
+        throw new IllegalArgumentException("Illegal character '" + ch + "' in value string: " +
+                seqToString(seq));
+    }
+
+    static int fromAlphanumeric(final char ch, final long seq1, final long seq2) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        if ('A' <= ch && ch <= 'Z') {
+            return 10 + ch - 'A';
+        }
+        throw new IllegalArgumentException("Illegal character '" + ch + "' in value string: " +
+                biSeqToString(seq1, seq2));
     }
 
     static int fromAlphanumeric(final char ch, final CharSequence seq) {
@@ -219,6 +324,21 @@ enum Chars {
         throw new IllegalArgumentException("Illegal character '" + ch + "' in value string: " + seq);
     }
 
+    static int fromDigit(final char ch, final long seq) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        throw new IllegalArgumentException("Illegal digit character '" + ch + "' in value string: " +
+                seqToString(seq));
+    }
+
+    static int fromDigit(final char ch, final long seq1, final long seq2) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        throw new IllegalArgumentException("Illegal digit character '" + ch + "' in value string: " +
+                biSeqToString(seq1, seq2));
+    }
     static int fromDigit(final char ch, final CharSequence seq) {
         if ('0' <= ch && ch <= '9') {
             return ch - '0';
@@ -250,6 +370,108 @@ enum Chars {
         return (char)((seq >>> (index << 3)) & 0xffL);
     }
 
+    static char charFromBiSeq(final long seq1, final long seq2, final int index) {
+        return index < Long.BYTES ? charFromSeq(seq1, index) : charFromSeq(seq2, index - Long.BYTES);
+    }
+
+    static int seqLength(final int seq) {
+        int tmp, val = seq;
+        int n = Integer.BYTES;
+        if ((tmp = val >>> 16) == 0) n -= 2; else val = tmp;
+        if ((tmp = val >>> 8) == 0) n -= 1; else val = tmp;
+        return val == 0 ? 0 : n;
+    }
+
+    static int seqLength(final long seq) {
+        long tmp, val = seq;
+        int n = Long.BYTES;
+        if ((tmp = val >>> 32) == 0) n -= 4; else val = tmp;
+        if ((tmp = val >>> 16) == 0) n -= 2; else val = tmp;
+        if ((tmp = val >>> 8) == 0) n -= 1; else val = tmp;
+        return val == 0 ? 0 : n;
+    }
+
+    static int biSeqLength(final long seq1, final long seq2) {
+        return seq2 == 0 ? seqLength(seq1) : Long.BYTES + seqLength(seq2);
+    }
+
+    static int intSeq(final CharSequence seq) {
+        final int len = seq.length();
+        if (len > Integer.BYTES) {
+            throw new IllegalArgumentException("String exceeds max length: " + seq);
+        }
+        int intSeq = 0;
+        for (int i = 0; i < len; i++) {
+            intSeq = charToSeq(intSeq, i, seq.charAt(i));
+        }
+        return intSeq;
+    }
+
+    static long longSeq(final CharSequence seq) {
+        return longSeq(seq, 0, seq.length());
+    }
+
+    static long longSeq(final CharSequence seq, final int offset, final int len) {
+        if (len > Long.BYTES) {
+            throw new IllegalArgumentException("Length exceeds max sequence length: " + len);
+        }
+        long longSeq = 0;
+        for (int i = 0; i < len; i++) {
+            longSeq = charToSeq(longSeq, i, seq.charAt(i + offset));
+        }
+        return longSeq;
+    }
+
+    static long longSeq1(final CharSequence seq) {
+        return longSeq(seq, 0, Math.min(Long.BYTES, seq.length()));
+    }
+
+    static long longSeq2(final CharSequence seq) {
+        final int len = seq.length();
+        return len > Long.BYTES ? longSeq(seq, Long.BYTES, len - Long.BYTES) : 0L;
+    }
+
+    static long lshSeq(final long seq, final int shift) {
+        return seq << (shift << 3);
+    }
+
+    static long rshSeq(final long seq, final int shift) {
+        return seq >>> (shift << 3);
+    }
+
+    static long subSeq(final long seq, final int start, final int end) {
+        final long masked = seq & (0xffffffffffffffffL >>> (Long.SIZE - (end << 3)));
+        return rshSeq(masked, start);
+    }
+
+    static long lshBiSeq1(final long seq1, final int shift) {
+        return shift < Long.BYTES ? lshSeq(seq1, shift) : 0L;
+    }
+
+    static long lshBiSeq2(final long seq1, final long seq2, final int shift) {
+        if (shift < Long.BYTES) {
+            final int bitShift = (shift << 3);
+            return (seq2 << bitShift) | (seq1 >>> (Long.SIZE - bitShift));
+        } else {
+            final int bitShift = ((shift - Long.BYTES) << 3);
+            return seq1 << bitShift;
+        }
+    }
+
+    static long rshBiSeq1(final long seq1, final long seq2, final int shift) {
+        if (shift < Long.BYTES) {
+            final int bitShift = (shift << 3);
+            return (seq1 >>> bitShift) | (seq2 << (Long.SIZE - bitShift));
+        } else {
+            final int bitShift = ((shift - Long.BYTES) << 3);
+            return seq2 >>> bitShift;
+        }
+    }
+
+    static long rshBiSeq2(final long seq2, final int shift) {
+        return shift < Long.BYTES ? rshSeq(seq2, shift) : 0L;
+    }
+
     static StringBuilder appendSeq(final long seq, final StringBuilder dst) {
         for (int i = 0; i < Long.BYTES; i++) {
             final char ch = charFromSeq(seq, i);
@@ -279,7 +501,7 @@ enum Chars {
             dst.append(ch);
         }
         for (int i = 0; i < Long.BYTES; i++) {
-            final char ch = charFromSeq(seq2, i - Long.BYTES);
+            final char ch = charFromSeq(seq2, i);
             if (ch == '\0') {
                 return i + Long.BYTES;
             }
@@ -296,13 +518,23 @@ enum Chars {
             append(appendable, ch);
         }
         for (int i = 0; i < Long.BYTES; i++) {
-            final char ch = charFromSeq(seq2, i - Long.BYTES);
+            final char ch = charFromSeq(seq2, i);
             if (ch == '\0') {
                 return i + Long.BYTES;
             }
             append(appendable, ch);
         }
         return Long.BYTES + Long.BYTES;
+    }
+
+    static CharSequence seqToString(final long seq) {
+        return appendSeq(seq, new StringBuilder(Long.BYTES + 1));
+    }
+
+    static CharSequence biSeqToString(final long seq1, final long seq2) {
+        final StringBuilder builder = new StringBuilder(Long.BYTES + Long.BYTES + 1);
+        appendBiSeq(seq1, seq2, builder);
+        return builder;
     }
 
     private static void append(final Appendable appendable, final char ch) {
@@ -315,6 +547,6 @@ enum Chars {
 
     @FunctionalInterface
     interface BiAppender<T> {
-        int append(long seq1, long seq2, T target);
+        long append(long seq1, long seq2, T target);
     }
 }

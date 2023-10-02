@@ -24,14 +24,18 @@
 package org.tools4j.shortstring;
 
 import static org.tools4j.shortstring.Chars.appendSeq;
+import static org.tools4j.shortstring.Chars.charFromSeq;
 import static org.tools4j.shortstring.Chars.charToSeq;
 import static org.tools4j.shortstring.Chars.fromAlphanumeric;
 import static org.tools4j.shortstring.Chars.fromDigit;
 import static org.tools4j.shortstring.Chars.fromLetter;
 import static org.tools4j.shortstring.Chars.indexOfFirstLetter;
+import static org.tools4j.shortstring.Chars.intSeq;
 import static org.tools4j.shortstring.Chars.isAlphanumeric;
 import static org.tools4j.shortstring.Chars.isDigit;
 import static org.tools4j.shortstring.Chars.leq;
+import static org.tools4j.shortstring.Chars.longSeq;
+import static org.tools4j.shortstring.Chars.seqToString;
 import static org.tools4j.shortstring.Chars.startsWithSignChar;
 import static org.tools4j.shortstring.Chars.toAlphanumeric;
 import static org.tools4j.shortstring.Chars.toAlphanumeric0;
@@ -208,56 +212,59 @@ public enum AlphanumericIntCodec {
     public static final String MIN_DIGIT_PREFIXED_ALPHANUMERIC = ".7XIZYK";
 
     public static int toInt(final CharSequence value) {
-        final int len = value.length();
-        final int off = startsWithSignChar(value) ? 1 : 0;
+        return toInt(longSeq(value), value.length());
+    }
+
+    static int toInt(final long seq, final int len) {
+        final int off = startsWithSignChar(seq) ? 1 : 0;
         if (len <= off) {
-            throw new IllegalArgumentException(len == 0 ? "Empty value string" : "Invalid sign-only string: " + value);
+            throw new IllegalArgumentException(len == 0 ? "Empty value string" : "Invalid sign-only string: " + seqToString(seq));
         }
         if (len - off > MAX_LENGTH_UNSIGNED) {
-            throw new IllegalArgumentException("String exceeds max length");
+            throw new IllegalArgumentException("String exceeds max length: " + seqToString(seq));
         }
-        final SeqType seqType = SeqType.sequenceFor(value);
+        final SeqType seqType = SeqType.sequenceFor(seq);
         int code;
         if (seqType.isNumeric()) {
-            code = fromDigit(value.charAt(off), value);
+            code = fromDigit(charFromSeq(seq, off), seq);
             for (int i = off + 1; i < len; i++) {
                 code *= 10;
-                code += fromDigit(value.charAt(i), value);
+                code += fromDigit(charFromSeq(seq, i), seq);
             }
             return off == 0 ? code : -code;
         }
         if (seqType.isLetterPrefixAlphanumeric()) {
-            code = fromLetter(value.charAt(off), value);
+            code = fromLetter(charFromSeq(seq, off), seq);
             for (int i = off + 1; i < len; i++) {
                 code *= 36;
-                code += 26 + fromAlphanumeric(value.charAt(i), value);
+                code += 26 + fromAlphanumeric(charFromSeq(seq, i), seq);
             }
             code += NUMERIC_BLOCK_LENGTH;
             return off == 0 ? code : -code;
         }
-        final char firstChar = seqType.isDigitPrefixAlphanumeric() ? value.charAt(off) : '\0';
+        final char firstChar = seqType.isDigitPrefixAlphanumeric() ? charFromSeq(seq, off) : '\0';
         if (firstChar == '0') {
-            code = fromAlphanumeric(value.charAt(off + 1), value);
+            code = fromAlphanumeric(charFromSeq(seq, off + 1), seq);
             for (int i = off + 2; i < len; i++) {
                 code *= 36;
-                code += 36 + fromAlphanumeric(value.charAt(i), value);
+                code += 36 + fromAlphanumeric(charFromSeq(seq, i), seq);
             }
             code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH;
             return off == 0 ? code : -code;
         }
         if ('1' <= firstChar && firstChar <= '9') {
-            final int indexOfFirstLetter = indexOfFirstLetter(value, off + 1, len);
+            final int indexOfFirstLetter = indexOfFirstLetter(seq, off + 1, len);
             assert indexOfFirstLetter >= off + 1;
             code = firstChar - '1';
             for (int i = off + 1; i < indexOfFirstLetter; i++) {
                 code *= 10;
-                code += 9 + fromDigit(value.charAt(i), value);
+                code += 9 + fromDigit(charFromSeq(seq, i), seq);
             }
             code *= 26;
-            code += fromLetter(value.charAt(indexOfFirstLetter), value);
+            code += fromLetter(charFromSeq(seq, indexOfFirstLetter), seq);
             for (int i = indexOfFirstLetter + 1; i < len; i++) {
                 code *= 36;
-                code += fromAlphanumeric(value.charAt(i), value);
+                code += fromAlphanumeric(charFromSeq(seq, i), seq);
             }
             code += NUMERIC_BLOCK_LENGTH + ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH + ALPHANUMERIC_ZERO_PREFIXED_BLOCK_LENGTH;
             final int subBlockIndex = len - indexOfFirstLetter - 1;
@@ -265,16 +272,16 @@ public enum AlphanumericIntCodec {
                 code += ALPHANUMERIC_DIGIT_PREFIXED_BLOCK_LENGTHS[i];
             }
             if (code < 0) {
-                if (code != Integer.MIN_VALUE || !isConvertibleToInt(value)) {
+                if (code != Integer.MIN_VALUE || !isConvertibleToInt(seq, len)) {
                     throw new IllegalArgumentException(
-                            "Digit-prefixed value exceeds max allowed: " + value + " > " + (off == 0 ?
+                            "Digit-prefixed value exceeds max allowed: " + seqToString(seq) + " > " + (off == 0 ?
                                     MAX_DIGIT_PREFIXED_ALPHANUMERIC : MIN_DIGIT_PREFIXED_ALPHANUMERIC
                             ));
                 }
             }
             return off == 0 ? code : -code;
         }
-        throw new IllegalArgumentException("Invalid value string: " + value);
+        throw new IllegalArgumentException("Invalid value string: " + seqToString(seq));
     }
 
     public static StringBuilder toString(final int value, final StringBuilder dst) {
@@ -285,7 +292,7 @@ public enum AlphanumericIntCodec {
         return appendSeq(toSeq(value), appendable);
     }
 
-    private static long toSeq(final int value) {
+    static long toSeq(final int value) {
         final char sign;
         int val = Math.abs(value);
         int start = 0;
@@ -381,27 +388,29 @@ public enum AlphanumericIntCodec {
     }
 
     public static boolean isConvertibleToInt(final CharSequence value) {
-        final int len = value.length();
+        return isConvertibleToInt(intSeq(value), value.length());
+    }
+
+    private static boolean isConvertibleToInt(final long seq, final int len) {
         if (len < 1 || len > MAX_LENGTH_SIGNED) {
             return false;
         }
-        final boolean signed = startsWithSignChar(value);
+        final boolean signed = startsWithSignChar(seq);
         if (signed) {
             if (len < 2) return false;
-            if (len < MAX_LENGTH_SIGNED) return isAlphanumeric(value, 1, len);
+            if (len < MAX_LENGTH_SIGNED) return isAlphanumeric(seq, 1, len);
         } else {
-            if (len < MAX_LENGTH_UNSIGNED) return isAlphanumeric(value, 0, len);
+            if (len < MAX_LENGTH_UNSIGNED) return isAlphanumeric(seq, 0, len);
         }
         final int off = signed ? 1 : 0;
-        if (!isAlphanumeric(value, off, len)) {
+        if (!isAlphanumeric(seq, off, len)) {
             return false;
         }
-        if (!isDigit(value.charAt(off))) {
+        if (!isDigit(charFromSeq(seq, off))) {
             return true;
         }
         return signed ?
-                leq(value, MIN_DIGIT_PREFIXED_ALPHANUMERIC) :
-                leq(value, MAX_DIGIT_PREFIXED_ALPHANUMERIC);
+                leq(seq, longSeq(MIN_DIGIT_PREFIXED_ALPHANUMERIC)) :
+                leq(seq, longSeq(MAX_DIGIT_PREFIXED_ALPHANUMERIC));
     }
-
 }

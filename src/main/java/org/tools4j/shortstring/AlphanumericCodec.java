@@ -23,6 +23,15 @@
  */
 package org.tools4j.shortstring;
 
+import static org.tools4j.shortstring.Chars.biSeqLength;
+import static org.tools4j.shortstring.Chars.biSeqToString;
+import static org.tools4j.shortstring.Chars.lshSeq;
+import static org.tools4j.shortstring.Chars.rshBiSeq1;
+import static org.tools4j.shortstring.Chars.rshSeq;
+import static org.tools4j.shortstring.Chars.seqLength;
+import static org.tools4j.shortstring.Chars.seqToString;
+import static org.tools4j.shortstring.Chars.subSeq;
+
 /**
  * Codec translating short alphanumeric strings to integers and back. For conversion to (short, int, long), strings up
  * to lengths (3, 6, 13) are supported, with an additional leading sign character for negative values.
@@ -122,6 +131,109 @@ public class AlphanumericCodec implements ShortStringCodec {
     @Override
     public int toString(final long value, final Appendable appendable) {
         return AlphanumericLongCodec.toString(value, appendable);
+    }
+
+    public short intToShort(final int value) {
+        final long seq = AlphanumericIntCodec.toSeq(value);
+        final int len = seqLength(seq);
+        return AlphanumericShortCodec.toShort((int) seq, len);
+    }
+
+    public short longToShort(final long value) {
+        final long seq1 = AlphanumericLongCodec.toSeq1(value);
+        final long seq2 = AlphanumericLongCodec.toSeq2(value);
+        final int len = biSeqLength(seq1, seq2);
+        return AlphanumericShortCodec.toShort((int)seq1, len);
+    }
+
+    public int longToInt(final long value) {
+        final long seq1 = AlphanumericLongCodec.toSeq1(value);
+        final long seq2 = AlphanumericLongCodec.toSeq2(value);
+        final int len = biSeqLength(seq1, seq2);
+        return AlphanumericIntCodec.toInt(seq1, len);
+    }
+
+    public int concatShortsToInt(final short valueA, final short valueB) {
+        final int seqA = AlphanumericShortCodec.toSeq(valueA);
+        final int seqB = AlphanumericShortCodec.toSeq(valueB);
+        final int lenA = seqLength(seqA);
+        final int lenB = seqLength(seqB);
+        final long seqAB = lshSeq(0xffffffffL & seqB, lenA) | (0xffffffffL & seqA);
+        return AlphanumericIntCodec.toInt(seqAB, lenA + lenB);
+    }
+
+    public long concatIntsToLong(final int valueA, final int valueB) {
+        final long seqA = AlphanumericIntCodec.toSeq(valueA);
+        final long seqB = AlphanumericIntCodec.toSeq(valueB);
+        final int lenA = seqLength(seqA);
+        final int lenB = seqLength(seqB);
+        final long rshB = rshSeq(seqB, Long.BYTES - lenA);
+        final long lshB = lshSeq(seqB, lenA);
+        return AlphanumericLongCodec.toLong(lshB | seqA, rshB, lenA + lenB);
+    }
+
+    public short substringOfIntToShort(final int value, final int start) {
+        return substringOfIntToShort(value, start, Integer.MAX_VALUE);
+    }
+
+    public short substringOfIntToShort(final int value, final int start, final int end) {
+        final long seq = AlphanumericIntCodec.toSeq(value);
+        final int len = seqLength(seq);
+        final int posStart = start >= 0 ? start : len + start;
+        final int posEnd = end == Integer.MAX_VALUE ? len : end >= 0 ? end : len + end;
+        if (posStart < 0 || posEnd > len || posStart >= posEnd) {
+            throw new IllegalArgumentException("Invalid start/end indices: " +
+                    seqToString(seq) + "[" + start + ":" + end + "]");
+        }
+        final int maxLen = maxShortLength() + (posStart == 0 && Chars.startsWithSignChar(seq) ? 1 : 0);
+        if (posEnd - posStart > maxLen) {
+            throw new IllegalArgumentException("Substring exceeds max short length: " +
+                    seqToString(seq) + "[" + start + ":" + end + "] exceeds " + maxLen);
+        }
+        final long subSeq = subSeq(seq, posStart, posEnd);
+        return AlphanumericShortCodec.toShort((int) subSeq, posEnd - posStart);
+    }
+
+    public int substringOfLongToInt(final long value, final int start) {
+        return substringOfLongToInt(value, start, Integer.MAX_VALUE);
+    }
+
+    public int substringOfLongToInt(final long value, final int start, final int end) {
+        if (start >= 0 && start < end) {
+            if (end <= Long.BYTES) {
+                final long seq1 = AlphanumericLongCodec.toSeq1(value);
+                if (end <= seqLength(seq1)) {
+                    final long subSeq = subSeq(seq1, start, end);
+                    return AlphanumericIntCodec.toInt(subSeq, end - start);
+                }
+            }
+            if (start >= Long.BYTES) {
+                final long seq2 = AlphanumericLongCodec.toSeq2(value);
+                final int len2 = seqLength(seq2);
+                final int start2 = start - Long.BYTES;
+                final int end2 = end == Integer.MAX_VALUE ? len2 : end - Long.BYTES;
+                if (end2 <= len2) {
+                    final long subSeq = subSeq(seq2, start2, end2);
+                    return AlphanumericIntCodec.toInt(subSeq, end2 - start2);
+                }
+            }
+        }
+        final long seq1 = AlphanumericLongCodec.toSeq1(value);
+        final long seq2 = AlphanumericLongCodec.toSeq2(value);
+        final int len = biSeqLength(seq1, seq2);
+        final int posStart = start >= 0 ? start : len + start;
+        final int posEnd = end == Integer.MAX_VALUE ? len : end >= 0 ? end : len + end;
+        if (posStart < 0 || posEnd > len || posStart >= posEnd) {
+            throw new IllegalArgumentException("Invalid start/end indices: " +
+                    biSeqToString(seq1, seq2) + "[" + start + ":" + end + "]");
+        }
+        final int maxLen = maxIntLength() + (posStart == 0 && Chars.startsWithSignChar(seq1) ? 1 : 0);
+        if (posEnd - posStart > maxLen) {
+            throw new IllegalArgumentException("Substring exceeds max int length: " +
+                    biSeqToString(seq1, seq2) + "[" + start + ":" + end + "] exceeds " + maxLen);
+        }
+        final long shifted = rshBiSeq1(seq1, seq2, posStart);
+        return AlphanumericIntCodec.toInt(shifted, posEnd - posStart);
     }
 
     @Override
