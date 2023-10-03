@@ -66,10 +66,9 @@ class ShortStringCodecTest {
 
     static Stream<Arguments> sourceCodecs() {
         return Stream.of(
-//                Arguments.of(new AlphaPrefixCodec(), AlphaPrefixCodec.MIN_NUMERIC, AlphaPrefixCodec.MAX_NUMERIC),
-                Arguments.of(new AlphanumericCodec(), Chars.AlphaNumeric, AlphanumericIntCodec.MIN_NUMERIC, AlphanumericIntCodec.MAX_NUMERIC),
-                Arguments.of(new NumericCodec(), Chars.Numeric, Integer.MIN_VALUE, Integer.MAX_VALUE),
-                Arguments.of(new HexCodec(), Chars.Hex, Integer.MIN_VALUE, Integer.MAX_VALUE)
+                Arguments.of(ShortString.ALPHANUMERIC, Chars.AlphaNumeric, AlphanumericIntCodec.MIN_NUMERIC, AlphanumericIntCodec.MAX_NUMERIC),
+                Arguments.of(ShortString.NUMERIC, Chars.Numeric, Integer.MIN_VALUE, Integer.MAX_VALUE),
+                Arguments.of(ShortString.HEX, Chars.Hex, Integer.MIN_VALUE, Integer.MAX_VALUE)
         );
     }
 
@@ -83,17 +82,17 @@ class ShortStringCodecTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("sourceCodecs")
-    void boundaries(final ShortStringCodec codec) {
+    void boundaries(final ShortStringCodec codec, final Chars chars) {
         final String min;
         final String max;
         final IntUnaryOperator next;
         final IntUnaryOperator prev;
-        if (codec instanceof AlphanumericCodec) {
+        if (chars == Chars.AlphaNumeric) {
             min = AlphanumericIntCodec.MIN_DIGIT_PREFIXED_ALPHANUMERIC;
             max = AlphanumericIntCodec.MAX_DIGIT_PREFIXED_ALPHANUMERIC;
             next = ch -> ch == '9' ? 'A' : ch == 'Z' ? '0' : ch + 1;
             prev = ch -> ch == '0' ? 'Z' : ch == 'A' ? '9' : ch - 1;
-        } else if (codec instanceof NumericCodec) {
+        } else if (chars == Chars.Numeric) {
             min = NumericCodec.MIN_INT_STRING;
             max = NumericCodec.MAX_INT_STRING;
             next = ch -> ch == '9' ? '0' : ch + 1;
@@ -120,8 +119,6 @@ class ShortStringCodecTest {
         //when + then
         assertEquals(Integer.MIN_VALUE + 1, codec.toInt(beforeMin), beforeMin);
         assertEquals(Integer.MAX_VALUE - 1, codec.toInt(beforeMax), beforeMax);
-//        assertEquals(Integer.MIN_VALUE + 1, codec.toInt(afterMin), afterMin);
-//        assertEquals(Integer.MAX_VALUE - 1, codec.toInt(afterMax), afterMax);
         assertThrows(IllegalArgumentException.class, () -> codec.toInt(afterMin), afterMin);
         assertThrows(IllegalArgumentException.class, () -> codec.toInt(afterMax), afterMax);
         count += 4;
@@ -173,6 +170,7 @@ class ShortStringCodecTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("sourceCodecs")
+    @SuppressWarnings("unused")
     void specialFromTo(final ShortStringCodec codec, final Chars chars, final int minNumeric, final int maxNumeric) {
         final int iterationsPerTest = 1;
         final char[] firstChars;
@@ -201,6 +199,7 @@ class ShortStringCodecTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("sourceCodecs")
+    @SuppressWarnings("unused")
     void specialToFrom(final ShortStringCodec codec, final Chars chars, final int minNumeric, final int maxNumeric) {
         final StringBuilder builder = new StringBuilder();
         for (int i = 0; i <= 1_000_000; i++) {

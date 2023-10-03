@@ -577,7 +577,7 @@ class AlphanumericCodecTest {
 
     @Test
     void intToShort() {
-        final AlphanumericCodec codec = new AlphanumericCodec();
+        final AlphanumericCodec codec = AlphanumericCodec.INSTANCE;
         someShortStrings(s -> {
             final int ival = codec.toInt(s);
             final short sval = codec.toShort(s);
@@ -587,7 +587,7 @@ class AlphanumericCodecTest {
 
     @Test
     void longToShort() {
-        final AlphanumericCodec codec = new AlphanumericCodec();
+        final AlphanumericCodec codec = AlphanumericCodec.INSTANCE;
         someShortStrings(s -> {
             final long lval = codec.toLong(s);
             final short sval = codec.toShort(s);
@@ -597,7 +597,7 @@ class AlphanumericCodecTest {
 
     @Test
     void longToInt() {
-        final AlphanumericCodec codec = new AlphanumericCodec();
+        final AlphanumericCodec codec = AlphanumericCodec.INSTANCE;
         final Consumer<String> asserter = s -> {
             final long lval = codec.toLong(s);
             final int ival = codec.toInt(s);
@@ -629,13 +629,13 @@ class AlphanumericCodecTest {
 
     @Test
     void substringOfInt() {
-        final AlphanumericCodec codec = new AlphanumericCodec();
+        final AlphanumericCodec codec = AlphanumericCodec.INSTANCE;
         someSubstringsOfInt(codec, this::assertSubstringOfInt);
     }
 
     @Test
     void substringOfLong() {
-        final AlphanumericCodec codec = new AlphanumericCodec();
+        final AlphanumericCodec codec = AlphanumericCodec.INSTANCE;
         someSubstringsOfInt(codec, this::assertSubstringOfLong);
         someSubstringsOfLong(codec, this::assertSubstringOfLong);
     }
@@ -817,7 +817,7 @@ class AlphanumericCodecTest {
 
     @Test
     void concat() {
-        final AlphanumericCodec codec = new AlphanumericCodec();
+        final AlphanumericCodec codec = AlphanumericCodec.INSTANCE;
         final BiConsumer<String, String> shortConcat = (s1, s2) -> {
             final short short1 = codec.toShort(s1);
             final short short2 = codec.toShort(s2);

@@ -33,6 +33,7 @@ import static org.tools4j.shortstring.Chars.leq;
  * @see Long#toString(long)
  */
 public class NumericCodec implements ShortStringCodec {
+    public static final NumericCodec INSTANCE = new NumericCodec();
     public static final String MAX_SHORT_STRING = Integer.toString(Short.MAX_VALUE);
     public static final String MIN_SHORT_STRING = Integer.toString(Short.MIN_VALUE);
     public static final String MAX_INT_STRING = Integer.toString(Integer.MAX_VALUE);

@@ -26,7 +26,6 @@ package org.tools4j.shortstring;
 import static org.tools4j.shortstring.Chars.biSeqLength;
 import static org.tools4j.shortstring.Chars.biSeqToString;
 import static org.tools4j.shortstring.Chars.lshSeq;
-import static org.tools4j.shortstring.Chars.rshBiSeq1;
 import static org.tools4j.shortstring.Chars.rshSeq;
 import static org.tools4j.shortstring.Chars.seqLength;
 import static org.tools4j.shortstring.Chars.seqToString;
@@ -74,6 +73,8 @@ import static org.tools4j.shortstring.Chars.subSeq;
  * @see AlphanumericLongCodec
  */
 public class AlphanumericCodec implements ShortStringCodec {
+    public static final AlphanumericCodec INSTANCE = new AlphanumericCodec();
+
     @Override
     public int maxShortLength() {
         return AlphanumericShortCodec.MAX_LENGTH_UNSIGNED;
