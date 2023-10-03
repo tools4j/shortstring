@@ -606,57 +606,38 @@ class AlphanumericCodecTest {
         someShortStrings(asserter);
         someIntStrings(asserter);
     }
-
-    interface Sub {
-        void sub(String str, int start, int end);
-    }
-    private void assertIntSubstring(final AlphanumericCodec codec,
-                                    final String str, final int start, final int end,
-                                    final String exp) {
+    private void assertSubstringOfInt(final AlphanumericCodec codec,
+                                      final String str, final int start, final int end,
+                                      final String sub) {
         final int ival = codec.toInt(str);
         final short subval = codec.substringOfIntToShort(ival, start, end);
-        assertEquals(codec.toShort(exp), subval, str + "[" + start + ":" + end + "]=" + exp);
+        assertEquals(codec.toShort(sub), subval, str + "[" + start + ":" + end + "]=" + sub);
+    }
+
+    private void assertSubstringOfLong(final AlphanumericCodec codec,
+                                       final String str, final int start, final int end,
+                                       final String sub) {
+        final long lval = codec.toLong(str);
+        final int subval = codec.substringOfLongToInt(lval, start, end);
+        assertEquals(codec.toInt(sub), subval, str + "[" + start + ":" + end + "]=" + sub);
+    }
+
+    @FunctionalInterface
+    private interface SubstringAsserter {
+        void assertSubstring(AlphanumericCodec codec, String str, int start, int end, String sub);
     }
 
     @Test
-    void intSubstring() {
+    void substringOfInt() {
         final AlphanumericCodec codec = new AlphanumericCodec();
-        assertIntSubstring(codec, "ABC", 0, Integer.MAX_VALUE, "ABC");
-        assertIntSubstring(codec, "ABC", 1, Integer.MAX_VALUE, "BC");
-        assertIntSubstring(codec, "ABC", 2, Integer.MAX_VALUE, "C");
-        assertIntSubstring(codec, "ABC", -1, Integer.MAX_VALUE, "C");
-        assertIntSubstring(codec, "ABC", -2, Integer.MAX_VALUE, "BC");
-        assertIntSubstring(codec, "ABC", -3, Integer.MAX_VALUE, "ABC");
-        assertIntSubstring(codec, ".ABC", 0, Integer.MAX_VALUE, ".ABC");
-        assertIntSubstring(codec, ".ABC", 1, Integer.MAX_VALUE, "ABC");
-        assertIntSubstring(codec, ".ABC", 2, Integer.MAX_VALUE, "BC");
-        assertIntSubstring(codec, ".ABC", 3, Integer.MAX_VALUE, "C");
-        assertIntSubstring(codec, ".ABC", -1, Integer.MAX_VALUE, "C");
-        assertIntSubstring(codec, ".ABC", -2, Integer.MAX_VALUE, "BC");
-        assertIntSubstring(codec, ".ABC", -3, Integer.MAX_VALUE, "ABC");
-        assertIntSubstring(codec, ".ABC", -4, Integer.MAX_VALUE, ".ABC");
-        assertIntSubstring(codec, "AUDUSD", 0, 3, "AUD");
-        assertIntSubstring(codec, "AUDUSD", 0, -3, "AUD");
-        assertIntSubstring(codec, "AUDUSD", 3, 6, "USD");
-        assertIntSubstring(codec, "AUDUSD", -3, 6, "USD");
-        assertIntSubstring(codec, "AUDUSD", -3, Integer.MAX_VALUE, "USD");
-        assertIntSubstring(codec, "AUDUSD", -2, Integer.MAX_VALUE, "SD");
-        assertIntSubstring(codec, "AUDUSD", -1, Integer.MAX_VALUE, "D");
-        assertIntSubstring(codec, "AUDUSD", 2, -1, "DUS");
-        assertIntSubstring(codec, "AUDUSD", -2, -1, "S");
-        for (int e = 1; e < 3; e++) {
-            assertIntSubstring(codec, "ABCDEF", 0, e, "ABCDEF".substring(0, e));
-            assertIntSubstring(codec, ".ABCDEF", 0, e + 1, ".ABCDEF".substring(0, e + 1));
-        }
-        for (int s = 3; s < 6; s++) {
-            assertIntSubstring(codec, "ABCDEF", s, Integer.MAX_VALUE, "ABCDEF".substring(s));
-            assertIntSubstring(codec, ".ABCDEF", s + 1, Integer.MAX_VALUE, ".ABCDEF".substring(s + 1));
-        }
-        for (int s = 0; s < 6; s++) {
-            for (int e = s + 1; e < Math.min(6, s + 1 + 3); e++) {
-                assertIntSubstring(codec, "ABCDEF", s, e, "ABCDEF".substring(s, e));
-            }
-        }
+        someSubstringsOfInt(codec, this::assertSubstringOfInt);
+    }
+
+    @Test
+    void substringOfLong() {
+        final AlphanumericCodec codec = new AlphanumericCodec();
+        someSubstringsOfInt(codec, this::assertSubstringOfLong);
+        someSubstringsOfLong(codec, this::assertSubstringOfLong);
     }
 
     private void someShortStrings(final Consumer<String> asserter) {
@@ -734,6 +715,104 @@ class AlphanumericCodecTest {
         asserter.accept(".007008");
         asserter.accept(".ABCDEF");
         asserter.accept(".ZZZZZZ");
+    }
+
+    private void someSubstringsOfInt(final AlphanumericCodec codec, final SubstringAsserter asserter) {
+        asserter.assertSubstring(codec, "ABC", 0, Integer.MAX_VALUE, "ABC");
+        asserter.assertSubstring(codec, "ABC", 1, Integer.MAX_VALUE, "BC");
+        asserter.assertSubstring(codec, "ABC", 2, Integer.MAX_VALUE, "C");
+        asserter.assertSubstring(codec, "ABC", -1, Integer.MAX_VALUE, "C");
+        asserter.assertSubstring(codec, "ABC", -2, Integer.MAX_VALUE, "BC");
+        asserter.assertSubstring(codec, "ABC", -3, Integer.MAX_VALUE, "ABC");
+        asserter.assertSubstring(codec, ".ABC", 0, Integer.MAX_VALUE, ".ABC");
+        asserter.assertSubstring(codec, ".ABC", 1, Integer.MAX_VALUE, "ABC");
+        asserter.assertSubstring(codec, ".ABC", 2, Integer.MAX_VALUE, "BC");
+        asserter.assertSubstring(codec, ".ABC", 3, Integer.MAX_VALUE, "C");
+        asserter.assertSubstring(codec, ".ABC", -1, Integer.MAX_VALUE, "C");
+        asserter.assertSubstring(codec, ".ABC", -2, Integer.MAX_VALUE, "BC");
+        asserter.assertSubstring(codec, ".ABC", -3, Integer.MAX_VALUE, "ABC");
+        asserter.assertSubstring(codec, ".ABC", -4, Integer.MAX_VALUE, ".ABC");
+        asserter.assertSubstring(codec, "AUDUSD", 0, 3, "AUD");
+        asserter.assertSubstring(codec, "AUDUSD", 0, -3, "AUD");
+        asserter.assertSubstring(codec, "AUDUSD", 3, 6, "USD");
+        asserter.assertSubstring(codec, "AUDUSD", -3, 6, "USD");
+        asserter.assertSubstring(codec, "AUDUSD", -3, Integer.MAX_VALUE, "USD");
+        asserter.assertSubstring(codec, "AUDUSD", -2, Integer.MAX_VALUE, "SD");
+        asserter.assertSubstring(codec, "AUDUSD", -1, Integer.MAX_VALUE, "D");
+        asserter.assertSubstring(codec, "AUDUSD", 2, -1, "DUS");
+        asserter.assertSubstring(codec, "AUDUSD", 1, -2, "UDU");
+        asserter.assertSubstring(codec, "AUDUSD", -2, -1, "S");
+        for (int e = 1; e < 3; e++) {
+            asserter.assertSubstring(codec, "ABCDEF", 0, e, "ABCDEF".substring(0, e));
+            asserter.assertSubstring(codec, ".ABCDEF", 0, e + 1, ".ABCDEF".substring(0, e + 1));
+        }
+        for (int s = 3; s < 6; s++) {
+            asserter.assertSubstring(codec, "ABCDEF", s, Integer.MAX_VALUE, "ABCDEF".substring(s));
+            asserter.assertSubstring(codec, ".ABCDEF", s + 1, Integer.MAX_VALUE, ".ABCDEF".substring(s + 1));
+        }
+        for (int s = 0; s < 6; s++) {
+            for (int e = s + 1; e < Math.min(6, s + 1 + 3); e++) {
+                asserter.assertSubstring(codec, "ABCDEF", s, e, "ABCDEF".substring(s, e));
+            }
+        }
+    }
+
+    private void someSubstringsOfLong(final AlphanumericCodec codec, final SubstringAsserter asserter) {
+        asserter.assertSubstring(codec, "ABCDEF", 0, Integer.MAX_VALUE, "ABCDEF");
+        asserter.assertSubstring(codec, "ABCDEF", 1, Integer.MAX_VALUE, "BCDEF");
+        asserter.assertSubstring(codec, "ABCDEF", 2, Integer.MAX_VALUE, "CDEF");
+        asserter.assertSubstring(codec, "ABCDEF", 3, Integer.MAX_VALUE, "DEF");
+        asserter.assertSubstring(codec, "ABCDEF", 4, Integer.MAX_VALUE, "EF");
+        asserter.assertSubstring(codec, "ABCDEF", 5, Integer.MAX_VALUE, "F");
+        asserter.assertSubstring(codec, "ABCDEF", -1, Integer.MAX_VALUE, "F");
+        asserter.assertSubstring(codec, "ABCDEF", -2, Integer.MAX_VALUE, "EF");
+        asserter.assertSubstring(codec, "ABCDEF", -3, Integer.MAX_VALUE, "DEF");
+        asserter.assertSubstring(codec, "ABCDEF", -4, Integer.MAX_VALUE, "CDEF");
+        asserter.assertSubstring(codec, "ABCDEF", -5, Integer.MAX_VALUE, "BCDEF");
+        asserter.assertSubstring(codec, "ABCDEF", -6, Integer.MAX_VALUE, "ABCDEF");
+        asserter.assertSubstring(codec, ".ABCDEF", 0, Integer.MAX_VALUE, ".ABCDEF");
+        asserter.assertSubstring(codec, ".ABCDEF", 1, Integer.MAX_VALUE, "ABCDEF");
+        asserter.assertSubstring(codec, ".ABCDEF", 2, Integer.MAX_VALUE, "BCDEF");
+        asserter.assertSubstring(codec, ".ABCDEF", 3, Integer.MAX_VALUE, "CDEF");
+        asserter.assertSubstring(codec, ".ABCDEF", 4, Integer.MAX_VALUE, "DEF");
+        asserter.assertSubstring(codec, ".ABCDEF", 5, Integer.MAX_VALUE, "EF");
+        asserter.assertSubstring(codec, ".ABCDEF", 6, Integer.MAX_VALUE, "F");
+        asserter.assertSubstring(codec, ".ABCDEF", -1, Integer.MAX_VALUE, "F");
+        asserter.assertSubstring(codec, ".ABCDEF", -2, Integer.MAX_VALUE, "EF");
+        asserter.assertSubstring(codec, ".ABCDEF", -3, Integer.MAX_VALUE, "DEF");
+        asserter.assertSubstring(codec, ".ABCDEF", -4, Integer.MAX_VALUE, "CDEF");
+        asserter.assertSubstring(codec, ".ABCDEF", -5, Integer.MAX_VALUE, "BCDEF");
+        asserter.assertSubstring(codec, ".ABCDEF", -6, Integer.MAX_VALUE, "ABCDEF");
+        asserter.assertSubstring(codec, ".ABCDEF", -7, Integer.MAX_VALUE, ".ABCDEF");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", 0, 6, "HIGHLY");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", 0, -6, "HIGHLY");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", 6, 12, "VALUED");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", -6, 12, "VALUED");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", -6, Integer.MAX_VALUE, "VALUED");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", -5, Integer.MAX_VALUE, "ALUED");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", -4, Integer.MAX_VALUE, "LUED");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", -3, Integer.MAX_VALUE, "UED");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", -2, Integer.MAX_VALUE, "ED");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", -1, Integer.MAX_VALUE, "D");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", 5, -1, "YVALUE");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", 4, -2, "LYVALU");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", 3, -3, "HLYVAL");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", 2, -4, "GHLYVA");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", 1, -5, "IGHLYV");
+        asserter.assertSubstring(codec, "HIGHLYVALUED", 5, -5, "YV");
+        for (int e = 1; e < 6; e++) {
+            asserter.assertSubstring(codec, "HIGHLYVALUED", 0, e, "HIGHLYVALUED".substring(0, e));
+            asserter.assertSubstring(codec, ".HIGHLYVALUED", 0, e + 1, ".HIGHLYVALUED".substring(0, e + 1));
+        }
+        for (int s = 6; s < 12; s++) {
+            asserter.assertSubstring(codec, "HIGHLYVALUED", s, Integer.MAX_VALUE, "HIGHLYVALUED".substring(s));
+            asserter.assertSubstring(codec, ".HIGHLYVALUED", s + 1, Integer.MAX_VALUE, ".HIGHLYVALUED".substring(s + 1));
+        }
+        for (int s = 0; s < 12; s++) {
+            for (int e = s + 1; e < Math.min(12, s + 1 + 6); e++) {
+                asserter.assertSubstring(codec, "HIGHLYVALUED", s, e, "HIGHLYVALUED".substring(s, e));
+            }
+        }
     }
 
     @Test

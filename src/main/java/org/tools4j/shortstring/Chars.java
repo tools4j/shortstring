@@ -444,6 +444,12 @@ enum Chars {
         return rshSeq(masked, start);
     }
 
+    static long subBiSeq(final long seq1, final long seq2, final int start, final int end) {
+        final long masked1 = start < Long.BYTES ? subSeq(seq1, 0, Math.min(end, Long.BYTES)) : 0L;
+        final long masked2 = end > Long.BYTES ? subSeq(seq2, 0, end - Long.BYTES) : 0L;
+        return rshBiSeq1(masked1, masked2, start);
+    }
+
     static long lshBiSeq1(final long seq1, final int shift) {
         return shift < Long.BYTES ? lshSeq(seq1, shift) : 0L;
     }

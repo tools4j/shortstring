@@ -30,6 +30,7 @@ import static org.tools4j.shortstring.Chars.rshBiSeq1;
 import static org.tools4j.shortstring.Chars.rshSeq;
 import static org.tools4j.shortstring.Chars.seqLength;
 import static org.tools4j.shortstring.Chars.seqToString;
+import static org.tools4j.shortstring.Chars.subBiSeq;
 import static org.tools4j.shortstring.Chars.subSeq;
 
 /**
@@ -232,8 +233,8 @@ public class AlphanumericCodec implements ShortStringCodec {
             throw new IllegalArgumentException("Substring exceeds max int length: " +
                     biSeqToString(seq1, seq2) + "[" + start + ":" + end + "] exceeds " + maxLen);
         }
-        final long shifted = rshBiSeq1(seq1, seq2, posStart);
-        return AlphanumericIntCodec.toInt(shifted, posEnd - posStart);
+        final long subSeq = subBiSeq(seq1, seq2, posStart, posEnd);
+        return AlphanumericIntCodec.toInt(subSeq, posEnd - posStart);
     }
 
     @Override
