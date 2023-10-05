@@ -23,6 +23,11 @@
  */
 package org.tools4j.shortstring;
 
+import java.io.IOException;
+
+import static org.tools4j.shortstring.Chars.appendSeq;
+import static org.tools4j.shortstring.Chars.charToSeq;
+
 /**
  * Hex codec that converts ints and longs to and from their base 16 representation.
  *
@@ -63,7 +68,11 @@ public class HexCodec implements ShortStringCodec {
 
     @Override
     public short toShort(final CharSequence value) {
-        throw new IllegalArgumentException("not implemented");//FIXME
+        final int ival = toInt(value);
+        if (ival >= Short.MIN_VALUE && ival <= Short.MAX_VALUE) {
+            return (short)ival;
+        }
+        throw new IllegalArgumentException("Invalid value string (overflow): " + value);
     }
 
     @Override
@@ -197,23 +206,29 @@ public class HexCodec implements ShortStringCodec {
 
     @Override
     public int toString(final short value, final Appendable appendable) {
-        throw new IllegalArgumentException("not implemented");//FIXME
+        return shortToString(value, appendable);
     }
 
     @Override
     public int toString(final int value, final Appendable appendable) {
-        throw new IllegalArgumentException("not implemented");//FIXME
+        return intToString(value, appendable);
     }
 
     @Override
     public int toString(final long value, final Appendable appendable) {
-        throw new IllegalArgumentException("not implemented");//FIXME
+        return longToString(value, appendable);
     }
 
     public static StringBuilder shortToString(final short value, final StringBuilder dst) {
         final int mag = Short.SIZE - Integer.numberOfLeadingZeros(Math.abs(value));
         final int len = Math.max(((mag + 3) / 4), 1);
         return toHexString(value, len, value < 0, dst);
+    }
+
+    public static int shortToString(final short value, final Appendable appendable) {
+        final int mag = Short.SIZE - Integer.numberOfLeadingZeros(Math.abs(value));
+        final int len = Math.max(((mag + 3) / 4), 1);
+        return toHexString(value, len, value < 0, appendable);
     }
 
     public static StringBuilder intToString(final int value, final StringBuilder dst) {
@@ -223,11 +238,25 @@ public class HexCodec implements ShortStringCodec {
         return toHexString(value, len, value < 0, dst);
     }
 
+    public static int intToString(final int value, final Appendable appendable) {
+        //see Integer.toHexString(int)
+        final int mag = Integer.SIZE - Integer.numberOfLeadingZeros(Math.abs(value));
+        final int len = Math.max(((mag + 3) / 4), 1);
+        return toHexString(value, len, value < 0, appendable);
+    }
+
     public static StringBuilder longToString(final long value, final StringBuilder dst) {
         //see Long.toHexString(int)
         final int mag = Long.SIZE - Long.numberOfLeadingZeros(Math.abs(value));
         final int len = Math.max(((mag + 3) / 4), 1);
         return toHexString(value, len, value < 0, dst);
+    }
+
+    public static int longToString(final long value, final Appendable appendable) {
+        //see Long.toHexString(int)
+        final int mag = Long.SIZE - Long.numberOfLeadingZeros(Math.abs(value));
+        final int len = Math.max(((mag + 3) / 4), 1);
+        return toHexString(value, len, value < 0, appendable);
     }
 
     private static StringBuilder toHexString(final long value, final int len, final boolean neg, final StringBuilder dst) {
@@ -243,6 +272,37 @@ public class HexCodec implements ShortStringCodec {
             val >>>= 4;
         } while (val != 0 && charPos > offset);
         return dst;
+    }
+
+    private static int toHexString(final long value, final int length, final boolean neg, final Appendable dst) {
+        try {
+            if (neg) {
+                dst.append('-');
+            }
+            long val = Math.abs(value);
+            int len = length;
+            if (len > 8) {
+                final long msb = value >>> 32;
+                append((int)msb, len - 8, dst);
+                val &= 0xffffffffL;
+                len = 8;
+            }
+            append((int)val, len, dst);
+            return len + (neg ? 1 : 0);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void append(final int value, final int len, final Appendable dst) {
+        int val = value;
+        long seq = 0;
+        for (int i = len - 1; i >= 0; i--) {
+            final char ch = HEX_DIGITS[val & 0xf];
+            seq = charToSeq(seq, i, ch);
+            val >>>= 4;
+        }
+        appendSeq(seq, dst);
     }
 
     @Override

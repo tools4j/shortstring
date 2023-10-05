@@ -23,7 +23,13 @@
  */
 package org.tools4j.shortstring;
 
+import java.io.IOException;
+
+import static org.tools4j.shortstring.Chars.appendSeq;
+import static org.tools4j.shortstring.Chars.charToSeq;
 import static org.tools4j.shortstring.Chars.leq;
+import static org.tools4j.shortstring.Chars.toDigit;
+import static org.tools4j.shortstring.StringLengths.stringLength;
 
 /**
  * Numeric only codec simply using {@link Integer#toString(int)} and {@link Long#toString(long)} as string
@@ -61,7 +67,11 @@ public class NumericCodec implements ShortStringCodec {
 
     @Override
     public short toShort(final CharSequence value) {
-        throw new IllegalArgumentException("not implemented");//FIXME
+        final int ival = toInt(value);
+        if (ival >= Short.MIN_VALUE && ival <= Short.MAX_VALUE) {
+            return (short)ival;
+        }
+        throw new IllegalArgumentException("Invalid value string (overflow): " + value);
     }
 
     @Override
@@ -179,21 +189,6 @@ public class NumericCodec implements ShortStringCodec {
     }
 
     @Override
-    public int toString(final short value, final Appendable appendable) {
-        throw new IllegalArgumentException("not implemented");//FIXME
-    }
-
-    @Override
-    public int toString(final int value, final Appendable appendable) {
-        throw new IllegalArgumentException("not implemented");//FIXME
-    }
-
-    @Override
-    public int toString(final long value, final Appendable appendable) {
-        throw new IllegalArgumentException("not implemented");//FIXME
-    }
-
-    @Override
     public StringBuilder toString(final short value, final StringBuilder dst) {
         return shortToString(value, dst);
     }
@@ -208,16 +203,84 @@ public class NumericCodec implements ShortStringCodec {
         return longToString(value, dst);
     }
 
+    @Override
+    public int toString(final short value, final Appendable appendable) {
+        return shortToString(value, appendable);
+    }
+
+    @Override
+    public int toString(final int value, final Appendable appendable) {
+        return intToString(value, appendable);
+    }
+
+    @Override
+    public int toString(final long value, final Appendable appendable) {
+        return longToString(value, appendable);
+    }
+
     public static StringBuilder shortToString(final short value, final StringBuilder dst) {
         return dst.append(value);
+    }
+
+    public static int shortToString(final short value, final Appendable dst) {
+        return longToString(value, dst);
     }
 
     public static StringBuilder intToString(final int value, final StringBuilder dst) {
         return dst.append(value);
     }
 
+    public static int intToString(final int value, final Appendable dst) {
+        return longToString(value, dst);
+    }
+
     public static StringBuilder longToString(final long value, final StringBuilder dst) {
         return dst.append(value);
+    }
+
+    public static int longToString(final long value, final Appendable dst) {
+        try {
+            if (value == Long.MIN_VALUE) {
+                dst.append("-9223372036854775808");
+                return 20;
+            }
+            long val;
+            if (value >= 0) {
+                val = value;
+            } else {
+                dst.append('-');
+                val = -value;
+            }
+            int len = stringLength(val);
+            if (len > 16) {
+                final long msb = val / 1_0000_0000_0000_0000L;
+                append(msb, len - 16, dst);
+                val -= msb * 1_0000_0000_0000_0000L;
+                len = 16;
+            }
+            if (len > 8) {
+                final long msb = val / 1_0000_0000L;
+                append(msb, len - 8, dst);
+                val -= msb * 1_0000_0000L;
+                len = 8;
+            }
+            append(val, len, dst);
+            return len + (value < 0 ? 1 : 0);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void append(final long value, final int len, final Appendable dst) {
+        assert value >= 0 && value < 1_0000_0000L;
+        long val = value;
+        long seq = 0;
+        for (int i = len - 1; i >= 0; i--) {
+            final char ch = toDigit(val);
+            seq = charToSeq(seq, i, ch);
+            val /= 10;
+        }
+        appendSeq(seq, dst);
     }
 
     @Override

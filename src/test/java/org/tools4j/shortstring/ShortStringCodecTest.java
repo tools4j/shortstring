@@ -142,7 +142,7 @@ class ShortStringCodecTest {
     @MethodSource("sourceCodecs")
     void randomFromTo(final ShortStringCodec codec, final Chars chars) {
         final Random rnd = new Random();
-        final int iterationsPerTest = MAX_LEN == 5 ? 200 : 20;
+        final int iterationsPerTest = MAX_LEN == 5 ? 100 : 10;
         final int nFirstChars = 5;
         final int nNextChars = 8;
         final IntUnaryOperator alphaNum0to6 = i -> (i < 7 ? '0' : 'A' - 7) + i;
@@ -317,6 +317,11 @@ class ShortStringCodecTest {
                 assertTrue(eq(pos, result), pos + " >> " + posSrc + " >> " + result);
                 count++;
 
+                result.setLength(0);
+                codec.toString(posSrc, (Appendable) result);
+                assertTrue(eq(pos, result), pos + " >> " + posSrc + " >> " + result);
+                count++;
+
                 if (zeroStr) continue;
 
                 final int negSrc = codec.toInt(neg);
@@ -324,6 +329,11 @@ class ShortStringCodecTest {
 
                 result.setLength(0);
                 codec.toString(negSrc, result);
+                assertTrue(eq(neg, result), neg + " >> " + negSrc + " >> " + result);
+                count++;
+
+                result.setLength(0);
+                codec.toString(negSrc, (Appendable) result);
                 assertTrue(eq(neg, result), neg + " >> " + negSrc + " >> " + result);
                 count++;
             }

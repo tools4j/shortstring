@@ -610,7 +610,9 @@ class AlphanumericCodecTest {
                                       final String str, final int start, final int end,
                                       final String sub) {
         final int ival = codec.toInt(str);
-        final short subval = codec.substringOfIntToShort(ival, start, end);
+        final short subval = end == Integer.MAX_VALUE ?
+                codec.substringOfIntToShort(ival, start) :
+                codec.substringOfIntToShort(ival, start, end);
         assertEquals(codec.toShort(sub), subval, str + "[" + start + ":" + end + "]=" + sub);
     }
 
@@ -618,7 +620,9 @@ class AlphanumericCodecTest {
                                        final String str, final int start, final int end,
                                        final String sub) {
         final long lval = codec.toLong(str);
-        final int subval = codec.substringOfLongToInt(lval, start, end);
+        final int subval = end == Integer.MAX_VALUE ?
+                codec.substringOfLongToInt(lval, start):
+                codec.substringOfLongToInt(lval, start, end);
         assertEquals(codec.toInt(sub), subval, str + "[" + start + ":" + end + "]=" + sub);
     }
 
