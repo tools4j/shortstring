@@ -4,6 +4,13 @@
 ## shortstring
 The tools4j shortstring library allows for efficient conversion of short enough strings to and from integers and longs.
 
+Short strings encoded as integers can for instance be used in the following situations:
+* Caching strings in memory with a reduced memory footprint and without the need to allocate objects
+* A more dynamic alternative to enums, for instance to encode a currency pair or a stock ticker
+* A user-friendly alternative to integer identifiers, with the ability to be printed or logged in a human-readable format
+
+The shortstring library avoids object allocations which makes it suitable for latency sensitive applications.   
+
 ### Quick Introduction
 
 Sample use of alphanumeric codec:
@@ -73,6 +80,8 @@ public class QuickIntroTest {
 
 This [code example](https://github.com/tools4j/shortstring/tree/master/src/test/java/org/tools4j/shortstring/QuickIntroTest.java) can be found in [tests](https://github.com/tools4j/shortstring/tree/master/src/test/java/org/tools4j/shortstring/).
 
+For more functions and API documentation please consider the [Javadoc API](http://www.javadoc.io/doc/org.tools4j/shortstring).
+
 ### Maven/Gradle
 
 #### Maven
@@ -88,7 +97,10 @@ This [code example](https://github.com/tools4j/shortstring/tree/master/src/test/
 ```
 api "org.tools4j:shortstring:1.1'
 ```
-
 ### Download
 You can download binaries, sources and javadoc from maven central:
 * [shortstring download](https://search.maven.org/search?namespace=org.tools4j&name=shortstring)
+
+### Javadoc API
+The API documentation of the latest release can be found here:
+* [Javadoc API](http://www.javadoc.io/doc/org.tools4j/shortstring)
