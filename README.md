@@ -89,13 +89,13 @@ For more functions and API documentation please consider the [Javadoc API](http:
 <dependency>
     <groupId>org.tools4j</groupId>
     <artifactId>shortstring</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
 </dependency>
 ```
 
 #### Gradle
 ```
-api "org.tools4j:shortstring:1.1'
+api "org.tools4j:shortstring:1.2'
 ```
 ### Download
 You can download binaries, sources and javadoc from maven central:
