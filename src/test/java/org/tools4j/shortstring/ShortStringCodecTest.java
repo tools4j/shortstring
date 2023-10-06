@@ -31,10 +31,12 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Stream;
 
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,23 +55,13 @@ class ShortStringCodecTest {
         char get(int charIndex, int run);
     }
 
-    private enum Chars {
-        AlphaNumeric,
-        Numeric,
-        Hex
-    }
-
     @BeforeEach
     void resetCount() {
         count = 0;
     }
 
-    static Stream<Arguments> sourceCodecs() {
-        return Stream.of(
-                Arguments.of(ShortString.ALPHANUMERIC, Chars.AlphaNumeric, AlphanumericIntCodec.MIN_NUMERIC, AlphanumericIntCodec.MAX_NUMERIC),
-                Arguments.of(ShortString.NUMERIC, Chars.Numeric, Integer.MIN_VALUE, Integer.MAX_VALUE),
-                Arguments.of(ShortString.HEX, Chars.Hex, Integer.MIN_VALUE, Integer.MAX_VALUE)
-        );
+    static Stream<Arguments> codecSpecs() {
+        return Arrays.stream(CodecSpec.values()).map(Arguments::of);
     }
 
     @AfterEach
@@ -81,55 +73,60 @@ class ShortStringCodecTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("sourceCodecs")
-    void boundaries(final ShortStringCodec codec, final Chars chars) {
-        final String min;
-        final String max;
-        final IntUnaryOperator next;
-        final IntUnaryOperator prev;
-        if (chars == Chars.AlphaNumeric) {
-            min = AlphanumericIntCodec.MIN_DIGIT_PREFIXED_ALPHANUMERIC;
-            max = AlphanumericIntCodec.MAX_DIGIT_PREFIXED_ALPHANUMERIC;
-            next = ch -> ch == '9' ? 'A' : ch == 'Z' ? '0' : ch + 1;
-            prev = ch -> ch == '0' ? 'Z' : ch == 'A' ? '9' : ch - 1;
-        } else if (chars == Chars.Numeric) {
-            min = NumericCodec.MIN_INT_STRING;
-            max = NumericCodec.MAX_INT_STRING;
-            next = ch -> ch == '9' ? '0' : ch + 1;
-            prev = ch -> ch == '0' ? '9' : ch - 1;
-        } else {
-            min = HexCodec.MIN_INT_STRING;
-            max = HexCodec.MAX_INT_STRING;
-            next = ch -> ch == '9' ? 'A' : ch == 'F' ? '0' : ch + 1;
-            prev = ch -> ch == '0' ? 'F' : ch == 'A' ? '9' : ch - 1;
-        }
+    @MethodSource("codecSpecs")
+    void boundaries(final CodecSpec spec) {
+        final ShortStringCodec codec = spec.codec;
 
         //when + then
-        assertEquals(Integer.MIN_VALUE, codec.toInt(min), min);
-        assertEquals(Integer.MAX_VALUE, codec.toInt(max), max);
-        count += 2;
+        assertEquals(Short.MIN_VALUE, codec.toShort(spec.minShortString), spec.minShortString);
+        assertEquals(Short.MAX_VALUE, codec.toShort(spec.maxShortString), spec.maxShortString);
+        assertEquals(Integer.MIN_VALUE, codec.toInt(spec.minIntString), spec.minIntString);
+        assertEquals(Integer.MAX_VALUE, codec.toInt(spec.maxIntString), spec.maxIntString);
+        assertEquals(Long.MIN_VALUE, codec.toLong(spec.minLongString), spec.minLongString);
+        assertEquals(Long.MAX_VALUE, codec.toLong(spec.maxLongString), spec.maxLongString);
+        count += 6;
 
         //given
-        final String beforeMin = next(min, prev, -1);
-        final String beforeMax = next(max, prev, -1);
-        final String afterMin = next(min, next, +1);
-        final String afterMax = next(max, next, +1);
-        count += 4;
+        final String shortBeforeMin = next(spec.minShortString, spec.prevChar, -1);
+        final String shortBeforeMax = next(spec.maxShortString, spec.prevChar, -1);
+        final String intBeforeMin = next(spec.minIntString, spec.prevChar, -1);
+        final String intBeforeMax = next(spec.maxIntString, spec.prevChar, -1);
+        final String longBeforeMin = next(spec.minLongString, spec.prevChar, -1);
+        final String longBeforeMax = next(spec.maxLongString, spec.prevChar, -1);
 
         //when + then
-        assertEquals(Integer.MIN_VALUE + 1, codec.toInt(beforeMin), beforeMin);
-        assertEquals(Integer.MAX_VALUE - 1, codec.toInt(beforeMax), beforeMax);
-        assertThrows(IllegalArgumentException.class, () -> codec.toInt(afterMin), afterMin);
-        assertThrows(IllegalArgumentException.class, () -> codec.toInt(afterMax), afterMax);
-        count += 4;
+        assertEquals(Short.MIN_VALUE + 1, codec.toShort(shortBeforeMin), shortBeforeMin);
+        assertEquals(Short.MAX_VALUE - 1, codec.toShort(shortBeforeMax), shortBeforeMax);
+        assertEquals(Integer.MIN_VALUE + 1, codec.toInt(intBeforeMin), intBeforeMin);
+        assertEquals(Integer.MAX_VALUE - 1, codec.toInt(intBeforeMax), intBeforeMax);
+        assertEquals(Long.MIN_VALUE + 1, codec.toLong(longBeforeMin), longBeforeMin);
+        assertEquals(Long.MAX_VALUE - 1, codec.toLong(longBeforeMax), longBeforeMax);
+        count += 6;
+
+        //given
+        final String shortAfterMin = next(spec.minShortString, spec.nextChar, +1);
+        final String shortAfterMax = next(spec.maxShortString, spec.nextChar, +1);
+        final String intAfterMin = next(spec.minIntString, spec.nextChar, +1);
+        final String intAfterMax = next(spec.maxIntString, spec.nextChar, +1);
+        final String longAfterMin = next(spec.minLongString, spec.nextChar, +1);
+        final String longAfterMax = next(spec.maxLongString, spec.nextChar, +1);
+
+        //when + then
+        assertThrows(IllegalArgumentException.class, () -> codec.toShort(shortAfterMin), shortAfterMin);
+        assertThrows(IllegalArgumentException.class, () -> codec.toShort(shortAfterMax), shortAfterMax);
+        assertThrows(IllegalArgumentException.class, () -> codec.toInt(intAfterMin), intAfterMin);
+        assertThrows(IllegalArgumentException.class, () -> codec.toInt(intAfterMax), intAfterMax);
+        assertThrows(IllegalArgumentException.class, () -> codec.toLong(longAfterMin), longAfterMin);
+        assertThrows(IllegalArgumentException.class, () -> codec.toLong(longAfterMax), longAfterMax);
+        count += 6;
     }
 
-    private static String next(final String value, final IntUnaryOperator nextChar, final int direction) {
+    private static String next(final String value, final CharUnaryOperator nextChar, final int direction) {
         final char[] chars = value.toCharArray();
         final int len = chars.length;
         for (int i = len - 1; i >= 0; i--) {
             final char cur = chars[i];
-            final char next = (char)nextChar.applyAsInt(cur);
+            final char next = nextChar.apply(cur);
             chars[i] = next;
             if (Character.compare(next, cur) * direction >= 0) {
                 break;
@@ -139,8 +136,8 @@ class ShortStringCodecTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("sourceCodecs")
-    void randomFromTo(final ShortStringCodec codec, final Chars chars) {
+    @MethodSource("codecSpecs")
+    void intRandomFromTo(final CodecSpec spec) {
         final Random rnd = new Random();
         final int iterationsPerTest = MAX_LEN == 5 ? 100 : 10;
         final int nFirstChars = 5;
@@ -149,106 +146,187 @@ class ShortStringCodecTest {
         final IntUnaryOperator alphaNum = i -> (i < 10 ? '0' : 'A' - 10) + i;
         final CharSupplier firstCharSupplier;
         final CharSupplier nextCharSupplier;
-        switch (chars) {
-            case AlphaNumeric:
+        switch (spec) {
+            case ALPHANUMERIC:
                 firstCharSupplier = (charIndex, run) -> run < nNextChars ? (char)alphaNum0to6.applyAsInt(rnd.nextInt(33)) : '\0';
                 nextCharSupplier = (charIndex, run) -> run < nNextChars ? (char)alphaNum.applyAsInt(rnd.nextInt(36)) : '\0';
                 break;
-            case Numeric:
+            case NUMERIC:
                 firstCharSupplier = (charIndex, run) -> run < nFirstChars ? (char)('1' + rnd.nextInt(9)) : '\0';
                 nextCharSupplier = (charIndex, run) -> run < nFirstChars ? (char)('0' + rnd.nextInt(10)) : '\0';
                 break;
-            case Hex:
+            case HEX:
                 firstCharSupplier = (charIndex, run) -> run < nNextChars ? (char)alphaNum.applyAsInt(1 + rnd.nextInt(15)) : '\0';
                 nextCharSupplier = (charIndex, run) -> run < nNextChars ? (char)alphaNum.applyAsInt(rnd.nextInt(16)) : '\0';
                 break;
             default:
-                throw new IllegalArgumentException("Unsupported: " + chars);
+                throw new IllegalArgumentException("Unsupported: " + spec);
         }
-        count = fromTo(codec, iterationsPerTest, chars, firstCharSupplier, nextCharSupplier);
+        count = fromTo(spec, iterationsPerTest, firstCharSupplier, nextCharSupplier);
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("sourceCodecs")
+    @MethodSource("codecSpecs")
     @SuppressWarnings("unused")
-    void specialFromTo(final ShortStringCodec codec, final Chars chars, final int minNumeric, final int maxNumeric) {
+    void specialFromTo(final CodecSpec spec) {
         final int iterationsPerTest = 1;
         final char[] firstChars;
         final char[] nextChars;
-        switch (chars) {
-            case AlphaNumeric:
+        switch (spec) {
+            case ALPHANUMERIC:
                 firstChars = new char[]{'0', '1', '6', 'A', 'B', 'Y', 'Z'};
                 nextChars = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'C', 'W', 'Z'};
                 break;
-            case Numeric:
+            case NUMERIC:
                 firstChars = new char[]{'1', '2', '3', '4', '5', '6', '7', '8', '9'};
                 nextChars = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
                 break;
-            case Hex:
+            case HEX:
                 firstChars = new char[]{'1', '2', '9', 'A', 'E', 'F'};
                 nextChars = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'D', 'F'};
                 break;
             default:
-                throw new IllegalArgumentException("Unsupported: " + chars);
+                throw new IllegalArgumentException("Unsupported: " + spec);
         }
-        count = fromTo(codec, iterationsPerTest, chars,
+        count = fromTo(spec, iterationsPerTest,
                 (charIndex, run) -> run < firstChars.length ? firstChars[run] : '\0',
                 (charIndex, run) -> run < nextChars.length ? nextChars[run] : '\0'
         );
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("sourceCodecs")
+    @MethodSource("codecSpecs")
     @SuppressWarnings("unused")
-    void specialToFrom(final ShortStringCodec codec, final Chars chars, final int minNumeric, final int maxNumeric) {
+    void shortToFrom(final CodecSpec spec) {
+        final ShortStringCodec codec = spec.codec;
         final StringBuilder builder = new StringBuilder();
-        for (int i = 0; i <= 1_000_000; i++) {
-            testToFrom(codec, i, builder);
-            testToFrom(codec, -i, builder);
-            testToFrom(codec, maxNumeric - i, builder);
-            testToFrom(codec, minNumeric + i, builder);
-            testToFrom(codec, Integer.MAX_VALUE - i, builder);
-            testToFrom(codec, Integer.MIN_VALUE + i, builder);
-            count += 6;
-        }
-        count--;//one test double counted for zero
-    }
-
-    static void testToFrom(final ShortStringCodec codec, final short source, final StringBuilder builder) {
-        builder.setLength(0);
-        codec.toString(source, builder);
-        final short from = codec.toShort(builder);
-        if (source != from) {
-            assertEquals(source, from, source + " >> " + builder + " >> " + from);
-        }
-    }
-
-    static void testToFrom(final ShortStringCodec codec, final int source, final StringBuilder builder) {
-        builder.setLength(0);
-        codec.toString(source, builder);
-        final int from = codec.toInt(builder);
-        if (source != from) {
-            assertEquals(source, from, source + " >> " + builder + " >> " + from);
-        }
-    }
-
-    static void testToFrom(final ShortStringCodec codec, final long source, final StringBuilder builder) {
-        builder.setLength(0);
-        codec.toString(source, builder);
-        final long from = codec.toLong(builder);
-        if (source != from) {
-            assertEquals(source, from, source + " >> " + builder + " >> " + from);
+        for (int i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
+            final short val = (short)i;
+            count += testToFrom(codec, val, builder);
         }
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("sourceCodecs")
-    void digitsFromTo(final ShortStringCodec codec, final Chars chars, final int minNumeric, final int maxNumeric) {
+    @MethodSource("codecSpecs")
+    @SuppressWarnings("unused")
+    void intRandomToFrom(final CodecSpec spec) {
+        final Random rnd = new Random();
+        final ShortStringCodec codec = spec.codec;
+        final StringBuilder builder = new StringBuilder();
+        for (int i = 0; i <= 1_000_000; i++) {
+            final int value = rnd.nextInt();
+            count += testToFrom(codec, value, builder);
+            count += testToFrom(codec, -value, builder);
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("codecSpecs")
+    @SuppressWarnings("unused")
+    void longRandomToFrom(final CodecSpec spec) {
+        final Random rnd = new Random();
+        final ShortStringCodec codec = spec.codec;
+        final StringBuilder builder = new StringBuilder();
+        for (int i = 0; i <= 1_000_000; i++) {
+            final long value = rnd.nextLong();
+            count += testToFrom(codec, value, builder);
+            count += testToFrom(codec, -value, builder);
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("codecSpecs")
+    @SuppressWarnings("unused")
+    void intSpecialToFrom(final CodecSpec spec) {
+        final ShortStringCodec codec = spec.codec;
+        final StringBuilder builder = new StringBuilder();
+        for (int i = 0; i <= 1_000_000; i++) {
+            count += testToFrom(codec, i, builder);
+            count += testToFrom(codec, -i, builder);
+            count += testToFrom(codec, spec.maxNumericInt - i, builder);
+            count += testToFrom(codec, spec.minNumericInt + i, builder);
+            count += testToFrom(codec, Integer.MAX_VALUE - i, builder);
+            count += testToFrom(codec, Integer.MIN_VALUE + i, builder);
+        }
+        count -= 2;//double counted zero, 2x
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("codecSpecs")
+    @SuppressWarnings("unused")
+    void longSpecialToFrom(final CodecSpec spec) {
+        final ShortStringCodec codec = spec.codec;
+        final StringBuilder builder = new StringBuilder();
+        for (int i = 0; i <= 1_000_000; i++) {
+            count += testToFrom(codec, i, builder);
+            count += testToFrom(codec, -i, builder);
+            count += testToFrom(codec, spec.maxNumericLong - i, builder);
+            count += testToFrom(codec, spec.minNumericLong + i, builder);
+            count += testToFrom(codec, Integer.MAX_VALUE - i, builder);
+            count += testToFrom(codec, Integer.MIN_VALUE + i, builder);
+            count += testToFrom(codec, Long.MAX_VALUE - i, builder);
+            count += testToFrom(codec, Long.MIN_VALUE + i, builder);
+        }
+        count -= 2;//double counted zero, 2x
+    }
+
+    static int testToFrom(final ShortStringCodec codec, final short source, final StringBuilder builder) {
+        builder.setLength(0);
+        codec.toString(source, builder);
+        final short fromBuilder = codec.toShort(builder);
+        if (source != fromBuilder) {
+            assertEquals(source, fromBuilder, source + " >> " + builder + " >> " + fromBuilder);
+        }
+        builder.setLength(0);
+        codec.toString(source, (Appendable) builder);
+        final short fromAppendable = codec.toShort(builder);
+        if (source != fromAppendable) {
+            assertEquals(source, fromAppendable, source + " >> " + builder + " >> " + fromAppendable);
+        }
+        return 2;
+    }
+
+    static int testToFrom(final ShortStringCodec codec, final int source, final StringBuilder builder) {
+        builder.setLength(0);
+        codec.toString(source, builder);
+        final int fromBuilder = codec.toInt(builder);
+        if (source != fromBuilder) {
+            assertEquals(source, fromBuilder, source + " >> " + builder + " >> " + fromBuilder);
+        }
+        builder.setLength(0);
+        codec.toString(source, (Appendable)builder);
+        final int fromAppendable = codec.toInt(builder);
+        if (source != fromAppendable) {
+            assertEquals(source, fromAppendable, source + " >> " + builder + " >> " + fromAppendable);
+        }
+        return 2;
+    }
+
+    static int testToFrom(final ShortStringCodec codec, final long source, final StringBuilder builder) {
+        builder.setLength(0);
+        codec.toString(source, builder);
+        final long fromBuilder = codec.toLong(builder);
+        if (source != fromBuilder) {
+            assertEquals(source, fromBuilder, source + " >> " + builder + " >> " + fromBuilder);
+        }
+        builder.setLength(0);
+        codec.toString(source, (Appendable)builder);
+        final long fromAppendable = codec.toLong(builder);
+        if (source != fromAppendable) {
+            assertEquals(source, fromAppendable, source + " >> " + builder + " >> " + fromAppendable);
+        }
+        return 2;
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("codecSpecs")
+    void intDigitsFromTo(final CodecSpec spec) {
+        final ShortStringCodec codec = spec.codec;
         final StringBuilder builder = new StringBuilder();
         boolean beforeZero = true;
         int inc = 1;
-        for (int intSource = minNumeric; intSource <= maxNumeric && (beforeZero || intSource > 0); intSource += inc) {
-            final String strSource = Integer.toString(intSource, chars == Chars.Hex ? 16 : 10).toUpperCase();
+        for (int intSource = spec.minNumericInt; intSource <= spec.maxNumericInt && (beforeZero || intSource > 0); intSource += inc) {
+            final String strSource = Integer.toString(intSource, spec == CodecSpec.HEX ? 16 : 10).toUpperCase();
             builder.setLength(0);
 
             assertEquals(strSource, codec.toString(intSource, builder).toString());
@@ -256,15 +334,14 @@ class ShortStringCodecTest {
             count++;
 
             //let's do small increments around 0 and at the boundaries
-            inc = (Math.abs(intSource) <= 1_000_000 || (maxNumeric - Math.abs(intSource) <= 1_000_000)) ?
+            inc = (Math.abs(intSource) <= 1_000_000 || (spec.maxNumericInt - Math.abs(intSource) <= 1_000_000)) ?
                     1 : 999;
             beforeZero &= intSource < 0;
         }
     }
 
-    long fromTo(final ShortStringCodec codec,
+    long fromTo(final CodecSpec spec,
                 final int iterationsPerTest,
-                final Chars chars,
                 final CharSupplier firstCharSupplier,
                 final CharSupplier nextCharSupplier) {
         long count = 0;
@@ -272,14 +349,14 @@ class ShortStringCodecTest {
         final char[] charArray = new char[7];
         for (int len = 1; len <= MAX_LEN; len++) {
             final int offset = 7 - len;
-            charArray[offset - 1] = chars == Chars.AlphaNumeric ? '.' : '-';
+            charArray[offset - 1] = spec == CodecSpec.ALPHANUMERIC ? '.' : '-';
             for (int i = 0; i < 26; i++) {
                 final char ch = firstCharSupplier.get(0, i);
                 if (ch == '\0') {
                     break;
                 }
                 charArray[offset] = ch;
-                count += testFromTo(codec, iterationsPerTest, nextCharSupplier, charArray, 1, len);
+                count += testFromTo(spec.codec, iterationsPerTest, nextCharSupplier, charArray, 1, len);
             }
         }
         return count;
@@ -341,4 +418,79 @@ class ShortStringCodecTest {
         return count;
     }
 
+    @FunctionalInterface
+    interface CharUnaryOperator {
+        char apply(char ch);
+    }
+
+    private enum CodecSpec {
+        ALPHANUMERIC(ShortString.ALPHANUMERIC,
+                AlphanumericShortCodec.MIN_NUMERIC, AlphanumericShortCodec.MAX_NUMERIC,
+                AlphanumericIntCodec.MIN_NUMERIC, AlphanumericIntCodec.MAX_NUMERIC,
+                AlphanumericLongCodec.MIN_NUMERIC, AlphanumericLongCodec.MAX_NUMERIC,
+                AlphanumericShortCodec.MIN_LETTER_DIGIT_PREFIXED_ALPHANUMERIC, AlphanumericShortCodec.MAX_LETTER_DIGIT_PREFIXED_ALPHANUMERIC,
+                AlphanumericIntCodec.MIN_DIGIT_PREFIXED_ALPHANUMERIC, AlphanumericIntCodec.MAX_DIGIT_PREFIXED_ALPHANUMERIC,
+                AlphanumericLongCodec.MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12, AlphanumericLongCodec.MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12,
+                ch -> (char)(ch == '9' ? 'A' : ch == 'Z' ? '0' : ch + 1),
+                ch -> (char)(ch == '0' ? 'Z' : ch == 'A' ? '9' : ch - 1)),
+        NUMERIC(ShortString.NUMERIC,
+                Short.MIN_VALUE, Short.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Long.MIN_VALUE, Long.MAX_VALUE,
+                NumericCodec.MIN_SHORT_STRING, NumericCodec.MAX_SHORT_STRING,
+                NumericCodec.MIN_INT_STRING, NumericCodec.MAX_INT_STRING,
+                NumericCodec.MIN_LONG_STRING, NumericCodec.MAX_LONG_STRING,
+                ch -> (char)(ch == '9' ? '0' : ch + 1),
+                ch -> (char)(ch == '0' ? '9' : ch - 1)),
+        HEX(ShortString.HEX,
+                Short.MIN_VALUE, Short.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Long.MIN_VALUE, Long.MAX_VALUE,
+                HexCodec.MIN_SHORT_STRING, HexCodec.MAX_SHORT_STRING,
+                HexCodec.MIN_INT_STRING, HexCodec.MAX_INT_STRING,
+                HexCodec.MIN_LONG_STRING, HexCodec.MAX_LONG_STRING,
+                ch -> (char)(ch == '9' ? 'A' : ch == 'F' ? '0' : ch + 1),
+                ch -> (char)(ch == '0' ? 'F' : ch == 'A' ? '9' : ch - 1));
+        CodecSpec(final ShortStringCodec codec,
+                  final short minNumericShort, final short maxNumericShort,
+                  final int minNumericInt, final int maxNumericInt,
+                  final long minNumericLong, final long maxNumericLong,
+                  final String minShortString,
+                  final String maxShortString,
+                  final String minIntString,
+                  final String maxIntString,
+                  final String minLongString,
+                  final String maxLongString,
+                  final CharUnaryOperator nextChar,
+                  final CharUnaryOperator prevChar
+        ) {
+            this.codec = requireNonNull(codec);
+            this.minNumericShort = minNumericShort;
+            this.maxNumericShort = maxNumericShort;
+            this.minNumericInt = minNumericInt;
+            this.maxNumericInt = maxNumericInt;
+            this.minNumericLong = minNumericLong;
+            this.maxNumericLong = maxNumericLong;
+            this.minShortString = requireNonNull(minShortString);
+            this.maxShortString = requireNonNull(maxShortString);
+            this.minIntString = requireNonNull(minIntString);
+            this.maxIntString = requireNonNull(maxIntString);
+            this.minLongString = requireNonNull(minLongString);
+            this.maxLongString = requireNonNull(maxLongString);
+            this.nextChar = requireNonNull(nextChar);
+            this.prevChar = requireNonNull(prevChar);
+        }
+
+        final ShortStringCodec codec;
+        final short minNumericShort;
+        final short maxNumericShort;
+        final int minNumericInt;
+        final int maxNumericInt;
+        final long minNumericLong;
+        final long maxNumericLong;
+        final String minShortString;
+        final String maxShortString;
+        final String minIntString;
+        final String maxIntString;
+        final String minLongString;
+        final String maxLongString;
+        final CharUnaryOperator nextChar;
+        final CharUnaryOperator prevChar;
+    }
 }

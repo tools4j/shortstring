@@ -145,7 +145,7 @@ public class HexCodec implements ShortStringCodec {
      * @throws IllegalArgumentException if value is not numeric or too large to fit in a long
      */
     public static long convertToLong(final CharSequence value) {
-        //see Integer.parseLong(int, int) with radix=16
+        //see Long.parseLong(int, int) with radix=16
         long result = 0;
         boolean negative = false;
         int i = 0, len = value.length();
@@ -220,13 +220,13 @@ public class HexCodec implements ShortStringCodec {
     }
 
     public static StringBuilder shortToString(final short value, final StringBuilder dst) {
-        final int mag = Short.SIZE - Integer.numberOfLeadingZeros(Math.abs(value));
+        final int mag = Short.SIZE - Integer.numberOfLeadingZeros(Math.abs(value) << 16);
         final int len = Math.max(((mag + 3) / 4), 1);
         return toHexString(value, len, value < 0, dst);
     }
 
     public static int shortToString(final short value, final Appendable appendable) {
-        final int mag = Short.SIZE - Integer.numberOfLeadingZeros(Math.abs(value));
+        final int mag = Short.SIZE - Integer.numberOfLeadingZeros(Math.abs(value) << 16);
         final int len = Math.max(((mag + 3) / 4), 1);
         return toHexString(value, len, value < 0, appendable);
     }
@@ -282,7 +282,7 @@ public class HexCodec implements ShortStringCodec {
             long val = Math.abs(value);
             int len = length;
             if (len > 8) {
-                final long msb = value >>> 32;
+                final long msb = val >>> 32;
                 append((int)msb, len - 8, dst);
                 val &= 0xffffffffL;
                 len = 8;
