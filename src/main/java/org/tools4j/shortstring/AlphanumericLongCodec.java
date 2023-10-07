@@ -140,16 +140,20 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  */
 public enum AlphanumericLongCodec {
     ;
+    /** Maximum string length for unsigned value is 13 */
     public static final int MAX_LENGTH_UNSIGNED = 13;
+    /** Maximum string length for signed value is 14 */
     public static final int MAX_LENGTH_SIGNED = 14;
     /**
      * Length of first block containing numeric values up to 13 digits:
      * <pre>
-     * 0-9999999999999
+     * 0 - 9,999,999,999,999
      * </pre>
      */
     private static final long NUMERIC_BLOCK_LENGTH = 10_000_000_000_000L;
+    /** Maximum numeric value: 9,999,999,999,999 */
     public static final long MIN_NUMERIC = -(NUMERIC_BLOCK_LENGTH - 1);
+    /** Maximum numeric value: 9,999,999,999,999 */
     public static final long MAX_NUMERIC = NUMERIC_BLOCK_LENGTH - 1;
 
     /**
@@ -254,8 +258,10 @@ public enum AlphanumericLongCodec {
             (26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L * 26L) * 10L * 36L
     };
 
-    public static final String MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12 = "RZRYMFXOEDX77";
+    /** Minimum value of length 13 with a digit at position 12: {@literal '.RZRYMFXOEDX78'} encoding to {@link Long#MIN_VALUE} */
     public static final String MIN_ALPHANUMERIC_13_WITH_DIGIT_AT_12 = ".RZRYMFXOEDX78";
+    /** Maximum value of length 13 with a digit at position 12: {@literal 'RZRYMFXOEDX77'} encoding to {@link Long#MAX_VALUE} */
+    public static final String MAX_ALPHANUMERIC_13_WITH_DIGIT_AT_12 = "RZRYMFXOEDX77";
 
     public static long toLong(final CharSequence value) {
         return toLong(longSeq1(value), longSeq2(value), value.length());

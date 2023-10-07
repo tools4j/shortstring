@@ -25,6 +25,9 @@ package org.tools4j.shortstring;
 
 import java.io.IOException;
 
+/**
+ * Contains utility methods for chars and char sequences.
+ */
 enum Chars {
     ;
 

@@ -25,13 +25,23 @@ package org.tools4j.shortstring;
 
 import static org.tools4j.shortstring.Chars.charFromSeq;
 
+/**
+ * Characterizes an alphanumeric character sequence.
+ */
 enum SeqType {
+    /** Numeric unsiged value without leading zeroes */
     NUMERIC_UNSIGNED,
+    /** Numeric signed value with '-' sign and without leading zeroes */
     NUMERIC_SIGNED,
+    /** Alphanumeric value starting with a letter */
     LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED,
+    /** Alphanumeric value starting with a '.' sign prefix, then a letter */
     LETTER_PREFIXED_ALPHANUMERIC_SIGNED,
+    /** Alphanumeric value starting with a digit */
     DIGIT_PREFIXED_ALPHANUMERIC_UNSIGNED,
+    /** Alphanumeric value starting with a '.' sign prefix, then a digit */
     DIGIT_PREFIXED_ALPHANUMERIC_SIGNED,
+    /** Non-alphanumeric value */
     INVALID;
 
     public boolean isSigned() {

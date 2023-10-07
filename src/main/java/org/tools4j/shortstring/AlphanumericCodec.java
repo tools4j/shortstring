@@ -58,9 +58,10 @@ import static org.tools4j.shortstring.Chars.subSeq;
  *        - strings longer than 4 characters (short), 7 characters (int) and 14 characters (long)
  *        - unsigned strings longer than 3 characters (short), 6 characters (int) and 13 characters (long)
  *        - strings containing non-alphanumeric characters other than the sign prefix
- *        - fully-numeric values with alphanumeric '.' sign prefix
- *        - alphanumeric strings with numeric '-' sign prefix
- *        - zero-prefixed strings with numeric '-' sign prefix
+ *        - strings with an incompatible sign prefix:
+ *            (a) fully-numeric values with alphanumeric '.' sign prefix
+ *            (b) alphanumeric strings with numeric '-' sign prefix
+ *            (c) zero-prefixed strings with numeric '-' sign prefix
  *
  *    --&gt; for more details see
  *        - {@link AlphanumericShortCodec}
@@ -73,6 +74,7 @@ import static org.tools4j.shortstring.Chars.subSeq;
  * @see AlphanumericLongCodec
  */
 public class AlphanumericCodec implements ShortStringCodec {
+    /** Default codec instance */
     public static final AlphanumericCodec INSTANCE = new AlphanumericCodec();
 
     @Override

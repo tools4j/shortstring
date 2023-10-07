@@ -32,13 +32,15 @@ import static org.tools4j.shortstring.Chars.toDigit;
 import static org.tools4j.shortstring.StringLengths.stringLength;
 
 /**
- * Numeric only codec simply using {@link Integer#toString(int)} and {@link Long#toString(long)} as string
- * representation for int and long, respectively.
+ * Numeric only codec simply using the equivalent of {@link Short#toString(short)}  {@link Integer#toString(int)} and
+ * {@link Long#toString(long)} as string representation for short, int and long, respectively.
  *
+ * @see Short#toString(short)
  * @see Integer#toString(int)
  * @see Long#toString(long)
  */
 public class NumericCodec implements ShortStringCodec {
+    /** Default codec instance */
     public static final NumericCodec INSTANCE = new NumericCodec();
     public static final String MAX_SHORT_STRING = Integer.toString(Short.MAX_VALUE);
     public static final String MIN_SHORT_STRING = Integer.toString(Short.MIN_VALUE);

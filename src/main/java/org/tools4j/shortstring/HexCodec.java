@@ -29,12 +29,13 @@ import static org.tools4j.shortstring.Chars.appendSeq;
 import static org.tools4j.shortstring.Chars.charToSeq;
 
 /**
- * Hex codec that converts ints and longs to and from their base 16 representation.
+ * Hex codec that converts shorts, ints, longs to and from their base 16 representation.
  *
  * @see Integer#toHexString(int)
  * @see Long#toHexString(long)
  */
 public class HexCodec implements ShortStringCodec {
+    /** Default codec instance */
     public static final HexCodec INSTANCE = new HexCodec();
     public static final String MAX_SHORT_STRING = "7FFF";
     public static final String MIN_SHORT_STRING = "-8000";

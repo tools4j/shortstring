@@ -25,8 +25,22 @@ package org.tools4j.shortstring;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Enum with different {@link ShortStringCodec} variants.
+ */
 public enum ShortString implements ShortStringCodec {
+    /**
+     * Numeric only codec simply using {@link Integer#toString(int)} and {@link Long#toString(long)} as string
+     * representation for int and long, respectively.
+     *
+     * @see NumericCodec
+     */
     NUMERIC(NumericCodec.INSTANCE),
+    /**
+     * Hex codec that converts shorts, ints, longs to and from their base 16 representation.
+     *
+     * @see HexCodec
+     */
     HEX(HexCodec.INSTANCE),
     /**
      * Codec translating short alphanumeric strings to integers and back. For conversion to int (long), strings up to
@@ -35,6 +49,7 @@ public enum ShortString implements ShortStringCodec {
      * For a detailed specification see {@link AlphanumericCodec}.
      *
      * @see AlphanumericCodec
+     * @see AlphanumericShortCodec
      * @see AlphanumericIntCodec
      * @see AlphanumericLongCodec
      */

@@ -23,12 +23,21 @@
  */
 package org.tools4j.shortstring;
 
+/**
+ * Character type enum, used by {@link SeqType}/
+ */
 enum CharType {
+    /** Characters: 'A'-'Z' */
     ALPHA,
+    /** Character: '0' */
     ZERO_DIGIT,
+    /** Characters: '1'-'9' */
     NON_ZERO_DIGIT,
+    /** Character: '.' */
     ALPHANUMERIC_SIGN,
+    /** Character: '-' */
     NUMERIC_SIGN,
+    /** Any character not covered by the other constants */
     OTHER;
 
     static CharType forChar(final char ch) {

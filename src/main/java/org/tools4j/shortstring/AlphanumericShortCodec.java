@@ -118,7 +118,9 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  */
 public enum AlphanumericShortCodec {
     ;
+    /** Maximum string length for unsigned value is 3 */
     public static final int MAX_LENGTH_UNSIGNED = 3;
+    /** Maximum string length for signed value is 4 */
     public static final int MAX_LENGTH_SIGNED = 4;
     /**
      * Length of 1st block containing numeric values up to 6 digits:
@@ -150,10 +152,14 @@ public enum AlphanumericShortCodec {
      * </pre>
      */
     private static final int ALPHANUMERIC_LETTER_DIGIT_PREFIXED_BLOCK_LENGTH = 6730;
-    public static final short MAX_NUMERIC = 999;
+    /** Minimum numeric value: -999 */
     public static final short MIN_NUMERIC = -999;
-    public static final String MAX_LETTER_DIGIT_PREFIXED_ALPHANUMERIC = "R9P";
+    /** Maximum numeric value: 999 */
+    public static final short MAX_NUMERIC = 999;
+    /** Minimum value with a letter-then-digit prefix: {@literal '.R9Q'} encoding to {@link Short#MIN_VALUE} */
     public static final String MIN_LETTER_DIGIT_PREFIXED_ALPHANUMERIC = ".R9Q";
+    /** Maximum value with a letter-then-digit prefix: {@literal 'R9P'} encoding to {@link Short#MAX_VALUE} */
+    public static final String MAX_LETTER_DIGIT_PREFIXED_ALPHANUMERIC = "R9P";
 
     public static short toShort(final CharSequence value) {
         return toShort(intSeq(value), value.length());

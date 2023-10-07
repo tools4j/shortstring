@@ -124,7 +124,9 @@ import static org.tools4j.shortstring.StringLengths.stringLength;
  */
 public enum AlphanumericIntCodec {
     ;
+    /** Maximum string length for unsigned value is 6 */
     public static final int MAX_LENGTH_UNSIGNED = 6;
+    /** Maximum string length for signed value is 7 */
     public static final int MAX_LENGTH_SIGNED = 7;
     /**
      * Length of 1st block containing numeric values up to 6 digits:
@@ -206,10 +208,14 @@ public enum AlphanumericIntCodec {
             - NUMERIC_BLOCK_LENGTH - ALPHANUMERIC_LETTER_PREFIXED_BLOCK_LENGTH
             - ALPHANUMERIC_ZERO_PREFIXED_BLOCK_LENGTH + 1;
 
-    public static final int MAX_NUMERIC = 999_999;
+    /** Minimum numeric value: -999,999 */
     public static final int MIN_NUMERIC = -999_999;
-    public static final String MAX_DIGIT_PREFIXED_ALPHANUMERIC = "7XIZYJ";
+    /** Maximum numeric value: 999,999 */
+    public static final int MAX_NUMERIC = 999_999;
+    /** Minimum digit-prefixed value: {@literal '.7XIZYK'} encoding to {@link Integer#MIN_VALUE} */
     public static final String MIN_DIGIT_PREFIXED_ALPHANUMERIC = ".7XIZYK";
+    /** Maximum digit-prefixed value: {@literal '7XIZYJ'} encoding to {@link Integer#MAX_VALUE} */
+    public static final String MAX_DIGIT_PREFIXED_ALPHANUMERIC = "7XIZYJ";
 
     public static int toInt(final CharSequence value) {
         return toInt(longSeq(value), value.length());
