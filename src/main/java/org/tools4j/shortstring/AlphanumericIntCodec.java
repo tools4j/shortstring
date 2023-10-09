@@ -30,7 +30,6 @@ import static org.tools4j.shortstring.Chars.fromAlphanumeric;
 import static org.tools4j.shortstring.Chars.fromDigit;
 import static org.tools4j.shortstring.Chars.fromLetter;
 import static org.tools4j.shortstring.Chars.indexOfFirstLetter;
-import static org.tools4j.shortstring.Chars.intSeq;
 import static org.tools4j.shortstring.Chars.isAlphanumeric;
 import static org.tools4j.shortstring.Chars.isDigit;
 import static org.tools4j.shortstring.Chars.leq;
@@ -394,7 +393,8 @@ public enum AlphanumericIntCodec {
     }
 
     public static boolean isConvertibleToInt(final CharSequence value) {
-        return isConvertibleToInt(intSeq(value), value.length());
+        final int len = value.length();
+        return len > 0 && len <= MAX_LENGTH_SIGNED && isConvertibleToInt(longSeq(value), len);
     }
 
     private static boolean isConvertibleToInt(final long seq, final int len) {
@@ -406,6 +406,7 @@ public enum AlphanumericIntCodec {
             if (len < 2) return false;
             if (len < MAX_LENGTH_SIGNED) return isAlphanumeric(seq, 1, len);
         } else {
+            if (len > MAX_LENGTH_UNSIGNED) return false;
             if (len < MAX_LENGTH_UNSIGNED) return isAlphanumeric(seq, 0, len);
         }
         final int off = signed ? 1 : 0;

@@ -30,6 +30,11 @@ import java.io.IOException;
  */
 enum Chars {
     ;
+    private static final char[] HEX_DIGITS = {
+            '0' , '1' , '2' , '3' , '4' , '5' , '6' , '7' ,
+            '8' , '9' , 'A' , 'B' , 'C' , 'D' , 'E' , 'F'
+    };
+
 
     /**
      * Note: a shorter string is always considered before a longer string.
@@ -265,6 +270,27 @@ enum Chars {
     static char toDigit(final int value) {
         final int code = value % 10;
         return (char)(code + '0');
+    }
+
+    static char toHex(final int value) {
+        return HEX_DIGITS[value & 0xf];
+    }
+
+    static char toHex(final long value) {
+        return toHex((int)value);
+    }
+
+    static boolean isHex(final char ch) {
+        return ('0' <= ch && ch <= '9') || ('A' <= ch && ch <= 'F');
+    }
+    static int fromHex(final char ch, final CharSequence value) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        if ('A' <= ch && ch <= 'F') {
+            return 10 + ch - 'A';
+        }
+        throw new IllegalArgumentException("Illegal hex character '" + ch + "' in value string: " + value);
     }
 
     static char toDigit(final long value) {

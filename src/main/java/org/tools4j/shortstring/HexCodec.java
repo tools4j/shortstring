@@ -27,6 +27,10 @@ import java.io.IOException;
 
 import static org.tools4j.shortstring.Chars.appendSeq;
 import static org.tools4j.shortstring.Chars.charToSeq;
+import static org.tools4j.shortstring.Chars.fromHex;
+import static org.tools4j.shortstring.Chars.isHex;
+import static org.tools4j.shortstring.Chars.leq;
+import static org.tools4j.shortstring.Chars.toHex;
 
 /**
  * Hex codec that converts shorts, ints, longs to and from their base 16 representation.
@@ -46,11 +50,6 @@ public class HexCodec implements ShortStringCodec {
     public static final int MAX_SHORT_STRING_LENGTH = MAX_SHORT_STRING.length();
     public static final int MAX_INT_STRING_LENGTH = MAX_INT_STRING.length();
     public static final int MAX_LONG_STRING_LENGTH = MAX_LONG_STRING.length();
-
-    private static final char[] HEX_DIGITS = {
-            '0' , '1' , '2' , '3' , '4' , '5' , '6' , '7' ,
-            '8' , '9' , 'A' , 'B' , 'C' , 'D' , 'E' , 'F'
-    };
 
     @Override
     public int maxShortLength() {
@@ -118,11 +117,7 @@ public class HexCodec implements ShortStringCodec {
             multmin = limit / 16;
             while (i < len) {
                 // Accumulating negatively avoids surprises near MAX_VALUE
-                final char ch = value.charAt(i++);
-                digit = Character.digit(ch, 16);
-                if (digit < 0) {
-                    throw new IllegalArgumentException("Illegal character '" + ch + "' in value: " + value);
-                }
+                digit = fromHex(value.charAt(i++), value);
                 if (result < multmin) {
                     throw new IllegalArgumentException("Invalid value string (overflow): " + value);
                 }
@@ -170,11 +165,7 @@ public class HexCodec implements ShortStringCodec {
             multmin = limit / 16;
             while (i < len) {
                 // Accumulating negatively avoids surprises near MAX_VALUE
-                final char ch = value.charAt(i++);
-                digit = Character.digit(ch, 16);
-                if (digit < 0) {
-                    throw new IllegalArgumentException("Illegal character '" + ch + "' in value: " + value);
-                }
+                digit = fromHex(value.charAt(i++), value);
                 if (result < multmin) {
                     throw new IllegalArgumentException("Invalid value string (overflow): " + value);
                 }
@@ -269,7 +260,7 @@ public class HexCodec implements ShortStringCodec {
         int charPos = offset + len;
         long val = Math.abs(value);
         do {
-            dst.setCharAt(--charPos, HEX_DIGITS[(int)(val & 0xf)]);
+            dst.setCharAt(--charPos, toHex(val));
             val >>>= 4;
         } while (val != 0 && charPos > offset);
         return dst;
@@ -299,7 +290,7 @@ public class HexCodec implements ShortStringCodec {
         int val = value;
         long seq = 0;
         for (int i = len - 1; i >= 0; i--) {
-            final char ch = HEX_DIGITS[val & 0xf];
+            final char ch = toHex(val);
             seq = charToSeq(seq, i, ch);
             val >>>= 4;
         }
@@ -308,34 +299,38 @@ public class HexCodec implements ShortStringCodec {
 
     @Override
     public boolean isConvertibleToShort(final CharSequence value) {
-        return isConvertible(value, MAX_SHORT_STRING_LENGTH);
+        return isConvertible(value, MAX_SHORT_STRING, MIN_SHORT_STRING);
     }
 
     @Override
     public boolean isConvertibleToInt(final CharSequence value) {
-        return isConvertible(value, MAX_INT_STRING_LENGTH);
+        return isConvertible(value, MAX_INT_STRING, MIN_INT_STRING);
     }
 
     @Override
     public boolean isConvertibleToLong(final CharSequence value) {
-        return isConvertible(value, MAX_LONG_STRING_LENGTH);
+        return isConvertible(value, MAX_LONG_STRING, MIN_LONG_STRING);
     }
 
-    private static boolean isConvertible(final CharSequence seq, final int maxLength) {
+    private static boolean isConvertible(final CharSequence seq, final String maxValue, final String minValue) {
         final int len = seq.length();
         if (len < 1) {
             return false;
         }
         final int signOff = seq.charAt(0) == '-' ? 1 : 0;
-        if (len - signOff > maxLength) {
+        final String max = signOff == 0 ? maxValue : minValue;
+        if (len > max.length() || len <= signOff) {
             return false;
         }
-        for (int i = signOff; i < maxLength; i++) {
-            if (Character.digit(seq.charAt(i), 16) < 0) {
+        for (int i = signOff; i < len; i++) {
+            if (!isHex(seq.charAt(i))) {
                 return false;
             }
         }
-        return true;
+        if (len < max.length()) {
+            return true;
+        }
+        return leq(seq, max);
     }
 
     @Override

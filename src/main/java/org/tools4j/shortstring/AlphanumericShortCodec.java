@@ -310,12 +310,13 @@ public enum AlphanumericShortCodec {
                 return len <= MAX_LENGTH_UNSIGNED;
             case NUMERIC_SIGNED:
                 return true;
-            case LETTER_PREFIXED_ALPHANUMERIC_SIGNED:
-                if (len < 2) return true;
+            case LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED:
+                if (len < MAX_LENGTH_UNSIGNED) return true;
+                if (len > MAX_LENGTH_UNSIGNED) return false;
                 final char ch2 = value.charAt(1);
                 return isLetter(ch2) || leq(value, MAX_LETTER_DIGIT_PREFIXED_ALPHANUMERIC);
-            case LETTER_PREFIXED_ALPHANUMERIC_UNSIGNED:
-                if (len < 3) return true;
+            case LETTER_PREFIXED_ALPHANUMERIC_SIGNED:
+                if (len < MAX_LENGTH_UNSIGNED) return true;
                 final char ch3 = value.charAt(2);
                 return isLetter(ch3) || leq(value, MIN_LETTER_DIGIT_PREFIXED_ALPHANUMERIC);
             default:

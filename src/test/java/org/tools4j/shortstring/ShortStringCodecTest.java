@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.tools4j.shortstring.Chars.eq;
@@ -78,6 +79,13 @@ class ShortStringCodecTest {
         final ShortStringCodec codec = spec.codec;
 
         //when + then
+        assertTrue(codec.isConvertibleToShort(spec.minShortString), spec.minShortString);
+        assertTrue(codec.isConvertibleToShort(spec.maxShortString), spec.maxShortString);
+        assertTrue(codec.isConvertibleToInt(spec.minIntString), spec.minIntString);
+        assertTrue(codec.isConvertibleToInt(spec.maxIntString), spec.maxIntString);
+        assertTrue(codec.isConvertibleToLong(spec.minLongString), spec.minLongString);
+        assertTrue(codec.isConvertibleToLong(spec.maxLongString), spec.maxLongString);
+
         assertEquals(Short.MIN_VALUE, codec.toShort(spec.minShortString), spec.minShortString);
         assertEquals(Short.MAX_VALUE, codec.toShort(spec.maxShortString), spec.maxShortString);
         assertEquals(Integer.MIN_VALUE, codec.toInt(spec.minIntString), spec.minIntString);
@@ -95,6 +103,13 @@ class ShortStringCodecTest {
         final String longBeforeMax = next(spec.maxLongString, spec.prevChar, -1);
 
         //when + then
+        assertTrue(codec.isConvertibleToShort(shortBeforeMin), shortBeforeMin);
+        assertTrue(codec.isConvertibleToShort(shortBeforeMax), shortBeforeMax);
+        assertTrue(codec.isConvertibleToInt(intBeforeMin), intBeforeMin);
+        assertTrue(codec.isConvertibleToInt(intBeforeMax), intBeforeMax);
+        assertTrue(codec.isConvertibleToLong(longBeforeMin), longBeforeMin);
+        assertTrue(codec.isConvertibleToLong(longBeforeMax), longBeforeMax);
+
         assertEquals(Short.MIN_VALUE + 1, codec.toShort(shortBeforeMin), shortBeforeMin);
         assertEquals(Short.MAX_VALUE - 1, codec.toShort(shortBeforeMax), shortBeforeMax);
         assertEquals(Integer.MIN_VALUE + 1, codec.toInt(intBeforeMin), intBeforeMin);
@@ -112,6 +127,13 @@ class ShortStringCodecTest {
         final String longAfterMax = next(spec.maxLongString, spec.nextChar, +1);
 
         //when + then
+        assertFalse(codec.isConvertibleToShort(shortAfterMin), shortAfterMin);
+        assertFalse(codec.isConvertibleToShort(shortAfterMax), shortAfterMax);
+        assertFalse(codec.isConvertibleToInt(intAfterMin), intAfterMin);
+        assertFalse(codec.isConvertibleToInt(intAfterMax), intAfterMax);
+        assertFalse(codec.isConvertibleToLong(longAfterMin), longAfterMin);
+        assertFalse(codec.isConvertibleToLong(longAfterMax), longAfterMax);
+
         assertThrows(IllegalArgumentException.class, () -> codec.toShort(shortAfterMin), shortAfterMin);
         assertThrows(IllegalArgumentException.class, () -> codec.toShort(shortAfterMax), shortAfterMax);
         assertThrows(IllegalArgumentException.class, () -> codec.toInt(intAfterMin), intAfterMin);
@@ -133,6 +155,115 @@ class ShortStringCodecTest {
             }
         }
         return new String(chars);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("codecSpecs")
+    @SuppressWarnings("DataFlowIssue")
+    void convertible(final CodecSpec spec) {
+        final ShortStringCodec codec = spec.codec;
+        final StringBuilder builder = new StringBuilder();
+        final int slen = codec.maxShortLength();
+        final int ilen = codec.maxIntLength();
+        final int llen = codec.maxLongLength();
+        final int lnlen = spec == CodecSpec.ALPHANUMERIC ? llen - 1 : llen;
+        final String sgn = spec == CodecSpec.ALPHANUMERIC ? "." : "-";
+        String value;
+        int len;
+
+        assertFalse(codec.isConvertibleToShort(""), "");
+        assertFalse(codec.isConvertibleToInt(""), "");
+        assertFalse(codec.isConvertibleToLong(""), "");
+        assertFalse(codec.isConvertibleToShort("."), ".");
+        assertFalse(codec.isConvertibleToInt("."), ".");
+        assertFalse(codec.isConvertibleToLong("."), ".");
+        assertFalse(codec.isConvertibleToShort("#"), "#");
+        assertFalse(codec.isConvertibleToInt("#"), "#");
+        assertFalse(codec.isConvertibleToLong("#"), "#");
+        assertFalse(codec.isConvertibleToShort("AAAAAAAAAAAAAAAAAA"), "AAAAAAAAAAAAAAAAAA");
+        assertFalse(codec.isConvertibleToInt("AAAAAAAAAAAAAAAAAA"), "AAAAAAAAAAAAAAAAAA");
+        assertFalse(codec.isConvertibleToLong("AAAAAAAAAAAAAAAAAA"), "AAAAAAAAAAAAAAAAAA");
+
+        builder.setLength(0);
+        len = 0;
+        while (spec != CodecSpec.NUMERIC && len < llen + 1) {
+            builder.append(len > 0 || spec == CodecSpec.ALPHANUMERIC ? 'A' : '7');
+            len++;
+
+            value = "" + builder;
+            assertEquals(len <= slen, codec.isConvertibleToShort(value), value);
+            assertEquals(len <= ilen, codec.isConvertibleToInt(value), value);
+            assertEquals(len <= llen, codec.isConvertibleToLong(value), value);
+
+            value = value.replace('A', 'F');
+            assertEquals(len <= slen, codec.isConvertibleToShort(value), value);
+            assertEquals(len <= ilen, codec.isConvertibleToInt(value), value);
+            assertEquals(len <= llen, codec.isConvertibleToLong(value), value);
+
+            value = sgn + builder;
+            assertEquals(len <= slen, codec.isConvertibleToShort(value), value);
+            assertEquals(len <= ilen, codec.isConvertibleToInt(value), value);
+            assertEquals(len <= llen, codec.isConvertibleToLong(value), value);
+
+            value = value.replace('A', 'F');
+            assertEquals(len <= slen, codec.isConvertibleToShort(value), value);
+            assertEquals(len <= ilen, codec.isConvertibleToInt(value), value);
+            assertEquals(len <= llen, codec.isConvertibleToLong(value), value);
+
+            value = 'a' + builder.substring(1);
+            assertFalse(codec.isConvertibleToShort(value), value);
+            assertFalse(codec.isConvertibleToInt(value), value);
+            assertFalse(codec.isConvertibleToLong(value), value);
+
+            value = ".a" + builder.substring(1);
+            assertFalse(codec.isConvertibleToShort(value), value);
+            assertFalse(codec.isConvertibleToInt(value), value);
+            assertFalse(codec.isConvertibleToLong(value), value);
+
+            value = builder.substring(0, len - 1) + "a";
+            assertFalse(codec.isConvertibleToShort(value), value);
+            assertFalse(codec.isConvertibleToInt(value), value);
+            assertFalse(codec.isConvertibleToLong(value), value);
+
+            value = sgn + builder.substring(0, len - 1) + "a";
+            assertFalse(codec.isConvertibleToShort(value), value);
+            assertFalse(codec.isConvertibleToInt(value), value);
+            assertFalse(codec.isConvertibleToLong(value), value);
+        }
+
+        assertFalse(codec.isConvertibleToShort("-"), "-");
+        assertFalse(codec.isConvertibleToInt("-"), "-");
+        assertFalse(codec.isConvertibleToInt("-"), "-");
+        assertTrue(codec.isConvertibleToShort("0"), "-");
+        assertTrue(codec.isConvertibleToInt("0"), "0");
+        assertTrue(codec.isConvertibleToInt("0"), "0");
+
+        builder.setLength(0);
+        len = 0;
+        while (len < llen + 1) {
+            builder.append('1');
+            len++;
+
+            value = "" + builder;
+            assertEquals(len <= slen, codec.isConvertibleToShort(value), value);
+            assertEquals(len <= ilen, codec.isConvertibleToInt(value), value);
+            assertEquals(len <= lnlen, codec.isConvertibleToLong(value), value);
+
+            value = "1" + builder.substring(1).replace('1', '9');
+            assertEquals(len <= slen, codec.isConvertibleToShort(value), value);
+            assertEquals(len <= ilen, codec.isConvertibleToInt(value), value);
+            assertEquals(len <= lnlen, codec.isConvertibleToLong(value), value);
+
+            value = "-" + builder;
+            assertEquals(len <= slen, codec.isConvertibleToShort(value), value);
+            assertEquals(len <= ilen, codec.isConvertibleToInt(value), value);
+            assertEquals(len <= lnlen, codec.isConvertibleToLong(value), value);
+
+            value = "-1" + builder.substring(1).replace('1', '9');
+            assertEquals(len <= slen, codec.isConvertibleToShort(value), value);
+            assertEquals(len <= ilen, codec.isConvertibleToInt(value), value);
+            assertEquals(len <= lnlen, codec.isConvertibleToLong(value), value);
+        }
     }
 
     @ParameterizedTest(name = "{0}")

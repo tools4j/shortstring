@@ -532,7 +532,8 @@ public enum AlphanumericLongCodec {
     }
 
     public static boolean isConvertibleToLong(final CharSequence value) {
-        return isConvertibleToLong(longSeq1(value), longSeq2(value), value.length());
+        final int len = value.length();
+        return len > 0 && len <= MAX_LENGTH_SIGNED && isConvertibleToLong(longSeq1(value), longSeq2(value), len);
     }
 
     private static boolean isConvertibleToLong(final long seq1, final long seq2, final int len) {
@@ -544,6 +545,7 @@ public enum AlphanumericLongCodec {
             if (len < 2) return false;
             if (len < MAX_LENGTH_SIGNED) return isAlphanumeric(seq1, seq2, 1, len);
         } else {
+            if (len > MAX_LENGTH_UNSIGNED) return false;
             if (len < MAX_LENGTH_UNSIGNED) return isAlphanumeric(seq1, seq2, 0, len);
         }
         final int off = signed ? 1 : 0;
